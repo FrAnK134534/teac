@@ -60,7 +60,7 @@ impl InterferenceGraph {
             .flat_map(|inst| {
                 inst.used_vregs()
                     .into_iter()
-                    .chain(inst.defined_vregs().into_iter())
+                    .chain(inst.defined_vregs())
             })
             .collect();
 

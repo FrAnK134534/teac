@@ -38,12 +38,6 @@ pub struct MemberExpr {
 }
 
 #[derive(Debug, Clone)]
-pub struct ArithUExpr {
-    pub op: ArithUOp,
-    pub expr: Box<ExprUnit>,
-}
-
-#[derive(Debug, Clone)]
 pub struct ArithBiOpExpr {
     pub op: ArithBiOp,
     pub left: Box<ArithExpr>,
@@ -95,6 +89,7 @@ pub struct BoolExpr {
 }
 
 #[derive(Debug, Clone)]
+#[allow(clippy::enum_variant_names)]
 pub enum BoolUnitInner {
     ComExpr(Box<ComExpr>),
     BoolExpr(Box<BoolExpr>),
@@ -122,7 +117,6 @@ pub enum ExprUnitInner {
     FnCall(Box<FnCall>),
     ArrayExpr(Box<ArrayExpr>),
     MemberExpr(Box<MemberExpr>),
-    ArithUExpr(Box<ArithUExpr>),
 }
 
 #[derive(Debug, Clone)]

@@ -9,13 +9,12 @@ pub mod types;
 
 pub use types::{BuiltIn, TypeSpecifier, TypeSpecifierInner};
 
-pub use ops::{ArithBiOp, ArithUOp, BoolBiOp, BoolUOp, ComOp};
+pub use ops::{ArithBiOp, BoolBiOp, BoolUOp, ComOp};
 
 pub use expr::{
-    ArithBiOpExpr, ArithExpr, ArithExprInner, ArithUExpr, ArrayExpr, BoolBiOpExpr, BoolExpr,
-    BoolExprInner, BoolUOpExpr, BoolUnit, BoolUnitInner, ComExpr, ExprUnit, ExprUnitInner, FnCall,
-    IndexExpr, IndexExprInner, LeftVal, LeftValInner, MemberExpr, RightVal, RightValInner,
-    RightValList,
+    ArithBiOpExpr, ArithExpr, ArithExprInner, ArrayExpr, BoolBiOpExpr, BoolExpr, BoolExprInner,
+    BoolUOpExpr, BoolUnit, BoolUnitInner, ComExpr, ExprUnit, ExprUnitInner, FnCall, IndexExpr,
+    IndexExprInner, LeftVal, LeftValInner, MemberExpr, RightVal, RightValInner, RightValList,
 };
 
 pub use stmt::{

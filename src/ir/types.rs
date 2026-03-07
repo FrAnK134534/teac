@@ -67,7 +67,7 @@ pub struct FunctionType {
 
 impl PartialEq<ast::FnDecl> for FunctionType {
     fn eq(&self, rhs: &ast::FnDecl) -> bool {
-        let rhs_dtype = match rhs.return_dtype.as_ref().as_ref().map(|ty| Dtype::from(ty)) {
+        let rhs_dtype = match rhs.return_dtype.as_ref().as_ref().map(Dtype::from) {
             Some(dtype) => dtype,
             None => Dtype::Void,
         };

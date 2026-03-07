@@ -39,7 +39,6 @@ impl IrGenerator<'_> {
         match &expr.inner {
             ast::ExprUnitInner::Num(num) => Ok(*num),
             ast::ExprUnitInner::ArithExpr(expr) => Self::handle_arith_expr_static(expr),
-            ast::ExprUnitInner::ArithUExpr(expr) => Self::handle_arith_uexpr_static(expr),
             _ => Err(Error::InvalidExprUnit {
                 expr_unit: expr.clone(),
             }),
@@ -61,14 +60,6 @@ impl IrGenerator<'_> {
             ast::BoolUnitInner::ComExpr(expr) => Self::handle_com_op_expr_static(expr),
             ast::BoolUnitInner::BoolExpr(expr) => Self::handle_bool_expr_static(expr),
             ast::BoolUnitInner::BoolUOpExpr(expr) => Self::handle_bool_uop_expr_static(expr),
-        }
-    }
-
-    pub fn handle_arith_uexpr_static(u: &ast::ArithUExpr) -> Result<i32, Error> {
-        if u.op == ast::ArithUOp::Neg {
-            Ok(-Self::handle_expr_unit_static(&u.expr)?)
-        } else {
-            Ok(0)
         }
     }
 

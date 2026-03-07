@@ -3,10 +3,8 @@ use crate::ir::function::Function;
 pub mod cfg;
 mod dominator;
 mod mem2reg;
-mod phi_elimination;
 
 pub use mem2reg::Mem2RegPass;
-pub use phi_elimination::PhiEliminationPass;
 
 pub trait FunctionPass {
     fn run(&self, func: &mut Function);

@@ -1,5 +1,6 @@
 mod function_generator;
 mod inst;
+mod phi_lowering;
 mod printer;
 mod register_allocator;
 mod types;
@@ -205,34 +206,16 @@ impl<'a> AArch64AsmGenerator<'a> {
         let mut insts: Vec<Inst> = Vec::new();
         insts.extend(Self::handle_arguments(func)?);
 
-        let mut ctx = FunctionGenerator {
-            func_id: &func.identifier,
-            frame: &frame,
-            layouts,
-            insts: &mut insts,
-            next_vreg: &mut next_vreg,
-            cond_map: &mut cond_map,
-        };
-
-        for block in blocks.iter() {
-            ctx.emit_label(&block.label);
-            for stmt in &block.stmts {
-                use ir::stmt::StmtInner::*;
-                match &stmt.inner {
-                    Label(l) => ctx.emit_label(&l.label),
-                    Alloca(_) => { /* Stack slots handled by frame layout */ }
-                    Store(s) => ctx.emit_store(s)?,
-                    Load(s) => ctx.emit_load(s)?,
-                    BiOp(s) => ctx.emit_biop(s)?,
-                    Cmp(s) => ctx.emit_cmp(s)?,
-                    CJump(s) => ctx.emit_cjump(s)?,
-                    Jump(s) => ctx.emit_jump(s),
-                    Gep(s) => ctx.emit_gep(s)?,
-                    Call(s) => ctx.emit_call(s)?,
-                    Return(s) => ctx.emit_return(s)?,
-                    _ => return Err(Error::Internal("unexpected statement in block".into())),
-                }
-            }
+        {
+            let mut ctx = FunctionGenerator {
+                func_id: &func.identifier,
+                frame: &frame,
+                layouts,
+                insts: &mut insts,
+                next_vreg: &mut next_vreg,
+                cond_map: &mut cond_map,
+            };
+            phi_lowering::lower_function_blocks(&mut ctx, blocks)?;
         }
 
         let alloc = register_allocator::allocate(&insts);

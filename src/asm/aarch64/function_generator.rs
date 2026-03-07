@@ -113,7 +113,7 @@ impl<'a> FunctionGenerator<'a> {
         let cond = *self
             .cond_map
             .get(&cond_v)
-            .ok_or_else(|| Error::MissingCond { vreg: cond_v })?;
+            .ok_or(Error::MissingCond { vreg: cond_v })?;
 
         let true_label = self.mangle_block_label(&s.true_label);
         let false_label = self.mangle_block_label(&s.false_label);
@@ -598,6 +598,54 @@ impl<'a> FunctionGenerator<'a> {
                 what: format!("expected immediate struct field index, got: {}", val),
             }),
         }
+    }
+
+    pub fn emit_stmt(&mut self, stmt: &ir::stmt::Stmt) -> Result<(), Error> {
+        use ir::stmt::StmtInner::*;
+        match &stmt.inner {
+            Label(l) => {
+                self.emit_label(&l.label);
+                Ok(())
+            }
+            Alloca(_) => Ok(()),
+            Store(s) => self.emit_store(s),
+            Load(s) => self.emit_load(s),
+            BiOp(s) => self.emit_biop(s),
+            Cmp(s) => self.emit_cmp(s),
+            CJump(s) => self.emit_cjump(s),
+            Jump(s) => {
+                self.emit_jump(s);
+                Ok(())
+            }
+            Gep(s) => self.emit_gep(s),
+            Call(s) => self.emit_call(s),
+            Return(s) => self.emit_return(s),
+            Phi(_) => Err(Error::Internal(
+                "phi nodes should be lowered before assembly emission".into(),
+            )),
+        }
+    }
+
+    pub fn emit_copy(&mut self, dst: &ir::Operand, src: &ir::Operand) -> Result<(), Error> {
+        let dst_vreg = Self::operand_vreg(dst)?;
+        let size = dtype_to_regsize(dst.dtype())?;
+
+        let src_op = match src {
+            ir::Operand::Integer(i) => Operand::Immediate(i.value as i64),
+            ir::Operand::Local(l) => Operand::Register(Register::Virtual(l.index)),
+            ir::Operand::Global(_) => {
+                return Err(Error::UnsupportedOperand {
+                    what: "global variable in phi copy".into(),
+                });
+            }
+        };
+
+        self.insts.push(Inst::Mov {
+            size,
+            dst: Register::Virtual(dst_vreg),
+            src: src_op,
+        });
+        Ok(())
     }
 
     fn mangle_block_label(&self, label: &ir::BlockLabel) -> String {

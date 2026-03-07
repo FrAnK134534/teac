@@ -32,20 +32,6 @@ impl Operand {
         }
     }
 
-    pub fn as_global(&self) -> Option<&GlobalVariable> {
-        match self {
-            Operand::Global(g) => Some(g),
-            _ => None,
-        }
-    }
-
-    pub fn as_integer(&self) -> Option<&Integer> {
-        match self {
-            Operand::Integer(i) => Some(i),
-            _ => None,
-        }
-    }
-
     pub fn is_addressable(&self) -> bool {
         matches!(self, Operand::Local(_) | Operand::Global(_))
     }

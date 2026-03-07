@@ -36,10 +36,6 @@ impl DominatorInfo {
         }
     }
 
-    pub fn immediate_dominator(&self, block: usize) -> Option<usize> {
-        self.idom[block]
-    }
-
     pub fn dom_children(&self, block: usize) -> &[usize] {
         &self.children[block]
     }

@@ -39,14 +39,6 @@ impl Display for ArithBiOp {
     }
 }
 
-impl Display for ArithUOp {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        match self {
-            ArithUOp::Neg => write!(f, "-"),
-        }
-    }
-}
-
 impl Display for BoolUOp {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match self {
@@ -81,12 +73,6 @@ impl Display for ComOp {
 impl Display for ArithBiOpExpr {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "({} {} {})", self.left, self.op, self.right)
-    }
-}
-
-impl Display for ArithUExpr {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "({}{})", self.op, self.expr)
     }
 }
 
@@ -226,7 +212,6 @@ impl Display for ExprUnitInner {
             ExprUnitInner::FnCall(fc) => write!(f, "{}", fc),
             ExprUnitInner::ArrayExpr(ae) => write!(f, "{}", ae),
             ExprUnitInner::MemberExpr(me) => write!(f, "{}", me),
-            ExprUnitInner::ArithUExpr(ue) => write!(f, "{}", ue),
         }
     }
 }

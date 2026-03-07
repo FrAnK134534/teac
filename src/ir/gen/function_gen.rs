@@ -114,10 +114,7 @@ impl<'ir> FunctionGenerator<'ir> {
 
     pub fn handle_local_var_decl(&mut self, decl: &ast::VarDecl) -> Result<(), Error> {
         let identifier = &decl.identifier;
-        let dtype = match decl.type_specifier.as_ref() {
-            Some(type_spec) => Some(Dtype::from(type_spec)),
-            None => None,
-        };
+        let dtype = decl.type_specifier.as_ref().as_ref().map(Dtype::from);
 
         let (var_dtype, needs_alloca) = match (&decl.inner, &dtype) {
             (ast::VarDeclInner::Scalar, None) => (Dtype::Undecided, false),
@@ -179,10 +176,7 @@ impl<'ir> FunctionGenerator<'ir> {
 
     pub fn handle_local_var_def(&mut self, def: &ast::VarDef) -> Result<(), Error> {
         let identifier = &def.identifier;
-        let dtype = match def.type_specifier.as_ref() {
-            Some(type_spec) => Some(Dtype::from(type_spec)),
-            None => None,
-        };
+        let dtype = def.type_specifier.as_ref().as_ref().map(Dtype::from);
 
         let variable: LocalVariable = match &def.inner {
             ast::VarDefInner::Scalar(scalar) => {
@@ -412,7 +406,6 @@ impl<'ir> FunctionGenerator<'ir> {
             }
             ast::ExprUnitInner::ArrayExpr(expr) => self.handle_array_expr(expr),
             ast::ExprUnitInner::MemberExpr(expr) => self.handle_member_expr(expr),
-            ast::ExprUnitInner::ArithUExpr(expr) => self.handle_arith_uexpr(expr),
         }?;
 
         Ok(match operand.dtype() {
@@ -516,13 +509,6 @@ impl<'ir> FunctionGenerator<'ir> {
             ast::LeftValInner::ArrayExpr(expr) => self.handle_array_expr(expr),
             ast::LeftValInner::MemberExpr(expr) => self.handle_member_expr(expr),
         }
-    }
-
-    fn handle_arith_uexpr(&mut self, expr: &ast::ArithUExpr) -> Result<Operand, Error> {
-        let val = self.handle_expr_unit(expr.expr.as_ref())?;
-        let res = self.alloc_temporary(Dtype::I32);
-        self.emit_biop(ArithBinOp::Sub, Operand::from(0), val, res.clone());
-        Ok(res)
     }
 
     fn handle_arith_biop_expr(&mut self, expr: &ast::ArithBiOpExpr) -> Result<Operand, Error> {

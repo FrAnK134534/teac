@@ -79,11 +79,6 @@ fn run() -> Result<()> {
             .context("failed to write IR output");
     }
 
-    let phi_elim = opt::PhiEliminationPass;
-    for func in ir_gen.module.function_list.values_mut() {
-        opt::FunctionPass::run(&phi_elim, func);
-    }
-
     let mut asm_gen = asm::AArch64AsmGenerator::new(&ir_gen.module, &ir_gen.registry);
     asm_gen.generate().context("assembly generation failed")?;
     asm_gen

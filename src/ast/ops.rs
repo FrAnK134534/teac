@@ -1,8 +1,3 @@
-#[derive(Debug, PartialEq, Clone)]
-pub enum ArithUOp {
-    Neg,
-}
-
 #[derive(Debug, Clone)]
 pub enum ArithBiOp {
     Add,

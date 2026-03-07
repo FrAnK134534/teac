@@ -158,7 +158,7 @@ impl DisplayAsTree for FnDecl {
             let mut new_indent = indent_levels.to_vec();
             new_indent.push(!is_last);
             writeln!(f, "{}Params:", tree_indent(&new_indent, false))?;
-            (&params.decls).fmt_tree(f, &new_indent, true)?;
+            params.decls.fmt_tree(f, &new_indent, true)?;
         }
         Ok(())
     }
@@ -190,7 +190,7 @@ impl DisplayAsTree for FnDef {
         )?;
         let mut new_indent = indent_levels.to_vec();
         new_indent.push(!is_last);
-        (&self.stmts).fmt_tree(f, &new_indent, true)
+        self.stmts.fmt_tree(f, &new_indent, true)
     }
 }
 
@@ -334,7 +334,7 @@ impl DisplayAsTree for IfStmt {
         let mut new_indent = indent_levels.to_vec();
         new_indent.push(is_last);
         writeln!(f, "{}IfBranch:", tree_indent(&new_indent, false))?;
-        (&self.if_stmts).fmt_tree(f, &new_indent, true)?;
+        self.if_stmts.fmt_tree(f, &new_indent, true)?;
         if let Some(e) = &self.else_stmts {
             writeln!(f, "{}ElseBranch:", tree_indent(&new_indent, false))?;
             e.fmt_tree(f, &new_indent, true)?;
@@ -359,7 +359,7 @@ impl DisplayAsTree for WhileStmt {
         let mut new_indent = indent_levels.to_vec();
         new_indent.push(is_last);
         writeln!(f, "{}Body:", tree_indent(&new_indent, false))?;
-        (&self.stmts).fmt_tree(f, &new_indent, true)
+        self.stmts.fmt_tree(f, &new_indent, true)
     }
 }
 
@@ -462,7 +462,7 @@ impl DisplayAsTree for StructDef {
         )?;
         let mut new_indent = indent_levels.to_vec();
         new_indent.push(is_last);
-        (&self.decls).fmt_tree(f, &new_indent, true)
+        self.decls.fmt_tree(f, &new_indent, true)
     }
 }
 
@@ -595,7 +595,6 @@ impl DisplayAsTree for ExprUnit {
             ExprUnitInner::FnCall(fc) => fc.fmt_tree(f, &new_indent, true),
             ExprUnitInner::ArrayExpr(ae) => ae.fmt_tree(f, &new_indent, true),
             ExprUnitInner::MemberExpr(me) => me.fmt_tree(f, &new_indent, true),
-            ExprUnitInner::ArithUExpr(ue) => ue.fmt_tree(f, &new_indent, true),
         }
     }
 }
@@ -704,17 +703,3 @@ impl DisplayAsTree for BoolUOpExpr {
     }
 }
 
-impl DisplayAsTree for ArithUExpr {
-    fn fmt_tree(
-        &self,
-        f: &mut Formatter<'_>,
-        indent_levels: &[bool],
-        is_last: bool,
-    ) -> Result<(), Error> {
-        writeln!(f, "{}ArithUExpr", tree_indent(indent_levels, is_last))?;
-        let mut new_indent = indent_levels.to_vec();
-        new_indent.push(is_last);
-
-        self.expr.fmt_tree(f, &new_indent, true)
-    }
-}

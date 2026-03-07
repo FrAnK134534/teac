@@ -603,11 +603,11 @@ impl Stmt {
                 Stmt::as_cjump(f(&s.dst), s.true_label.clone(), s.false_label.clone())
             }
             StmtInner::Call(s) => {
-                let args = s.args.iter().map(|a| f(a)).collect();
+                let args = s.args.iter().map(&f).collect();
                 Stmt::as_call(s.func_name.clone(), s.res.clone(), args)
             }
             StmtInner::Gep(s) => Stmt::as_gep(s.new_ptr.clone(), f(&s.base_ptr), f(&s.index)),
-            StmtInner::Return(s) => Stmt::as_return(s.val.as_ref().map(|v| f(v))),
+            StmtInner::Return(s) => Stmt::as_return(s.val.as_ref().map(&f)),
             StmtInner::Phi(s) => {
                 let incomings = s
                     .incomings

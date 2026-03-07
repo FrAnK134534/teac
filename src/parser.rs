@@ -651,7 +651,7 @@ fn parse_expr_unit(pair: Pair) -> ParseResult<Box<ast::ExprUnit>> {
         }));
     }
 
-    if filtered.len() >= 1 && filtered[0].as_rule() == Rule::fn_call {
+    if !filtered.is_empty() && filtered[0].as_rule() == Rule::fn_call {
         return Ok(Box::new(ast::ExprUnit {
             pos,
             inner: ast::ExprUnitInner::FnCall(parse_fn_call(filtered[0].clone())?),
@@ -666,7 +666,7 @@ fn parse_expr_unit(pair: Pair) -> ParseResult<Box<ast::ExprUnit>> {
         }));
     }
 
-    if inner_pairs.len() >= 1 && inner_pairs[0].as_rule() == Rule::identifier {
+    if !inner_pairs.is_empty() && inner_pairs[0].as_rule() == Rule::identifier {
         let id = inner_pairs[0].as_str().to_string();
 
         let mut base = Box::new(ast::LeftVal {
@@ -685,7 +685,7 @@ fn parse_expr_unit(pair: Pair) -> ParseResult<Box<ast::ExprUnit>> {
             }
         }
 
-        return left_val_to_expr_unit(base);
+        return left_val_to_expr_unit(*base);
     }
 
     Err(Error::Grammar("expr_unit"))
@@ -727,7 +727,7 @@ fn parse_expr_suffix_to_left_val(
     Ok(base)
 }
 
-fn left_val_to_expr_unit(lval: Box<ast::LeftVal>) -> ParseResult<Box<ast::ExprUnit>> {
+fn left_val_to_expr_unit(lval: ast::LeftVal) -> ParseResult<Box<ast::ExprUnit>> {
     let pos = lval.pos;
 
     match &lval.inner {

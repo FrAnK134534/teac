@@ -316,10 +316,9 @@ impl<'a> IrGenerator<'a> {
 
     fn handle_struct_def(&mut self, struct_def: &ast::StructDef) -> Result<(), Error> {
         let identifier = struct_def.identifier.clone();
-        let mut offset = 0;
         let mut elements = Vec::new();
 
-        for decl in struct_def.decls.iter() {
+        for (offset, decl) in struct_def.decls.iter().enumerate() {
             let base_dtype = match decl.type_specifier.as_ref() {
                 Some(type_specifier) => type_specifier.into(),
                 None => Dtype::Void,
@@ -337,7 +336,7 @@ impl<'a> IrGenerator<'a> {
             elements.push((
                 decl.identifier.clone(),
                 StructMember {
-                    offset,
+                    offset: offset as i32,
                     dtype: match &decl.inner {
                         ast::VarDeclInner::Scalar => base_dtype,
                         ast::VarDeclInner::Array(array) => Dtype::array_of(base_dtype, array.len),
@@ -345,8 +344,6 @@ impl<'a> IrGenerator<'a> {
                     },
                 },
             ));
-
-            offset += 1;
         }
 
         self.registry
