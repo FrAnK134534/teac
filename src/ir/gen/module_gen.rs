@@ -225,8 +225,8 @@ impl<'a> IrGenerator<'a> {
                 ast::VarDefInner::Array(def) => def
                     .vals
                     .iter()
-                    .map(|val| Self::handle_right_val_static(val).unwrap())
-                    .collect(),
+                    .map(Self::handle_right_val_static)
+                    .collect::<Result<Vec<_>, _>>()?,
                 ast::VarDefInner::Scalar(scalar) => {
                     let value = Self::handle_right_val_static(&scalar.val)?;
                     vec![value]

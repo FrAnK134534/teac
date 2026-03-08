@@ -479,16 +479,17 @@ impl<'ir> FunctionGenerator<'ir> {
             .struct_type_name()
             .ok_or_else(|| Error::InvalidStructMemberExpression { expr: expr.clone() })?;
 
-        let member = &self
+        let struct_type = self
             .registry
             .struct_types
             .get(type_name)
-            .unwrap()
+            .ok_or_else(|| Error::InvalidStructMemberExpression { expr: expr.clone() })?;
+        let member = struct_type
             .elements
             .iter()
             .find(|elem| elem.0 == expr.member_id)
-            .unwrap()
-            .1;
+            .map(|elem| &elem.1)
+            .ok_or_else(|| Error::InvalidStructMemberExpression { expr: expr.clone() })?;
         let member_dtype = member.dtype.clone();
         let member_offset = member.offset;
 
