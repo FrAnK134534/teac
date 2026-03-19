@@ -1,0 +1,63 @@
+use std;
+
+fn get_limit() -> i32 {
+    return 8;
+}
+
+fn main() -> i32 {
+    // Variable as upper bound
+    let n:i32 = 6;
+    let sum:i32 = 0;
+    for i in 0..n {
+        sum = sum + i;
+    }
+    std::putint(sum);
+    std::putch(10);
+
+    // Function call as upper bound (evaluated once)
+    let fsum:i32 = 0;
+    for i in 0..get_limit() {
+        fsum = fsum + i;
+    }
+    std::putint(fsum);
+    std::putch(10);
+
+    // Empty range: start == end produces no iterations
+    let empty:i32 = 99;
+    for i in 5..5 {
+        empty = 0;
+    }
+    std::putint(empty);
+    std::putch(10);
+
+    // Negative start produces no iterations when start >= end
+    let neg:i32 = 77;
+    for i in 3..1 {
+        neg = 0;
+    }
+    std::putint(neg);
+    std::putch(10);
+
+    // Parenthesized expression as bound
+    let psum:i32 = 0;
+    let m:i32 = 11;
+    for i in 0..(m - 1) {
+        psum = psum + i;
+    }
+    std::putint(psum);
+    std::putch(10);
+
+    // Array fill with for-in
+    let arr: [i32; 10];
+    for i in 0..10 {
+        arr[i] = i * i;
+    }
+    let asum:i32 = 0;
+    for i in 0..10 {
+        asum = asum + arr[i];
+    }
+    std::putint(asum);
+    std::putch(10);
+
+    return 0;
+}

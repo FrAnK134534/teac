@@ -35,6 +35,14 @@ struct GeneratedFunction {
     insts: Vec<Inst>,
 }
 
+fn lower_link_symbol(ir_name: &str) -> String {
+    if let Some(stripped) = ir_name.strip_prefix("std::") {
+        stripped.to_string()
+    } else {
+        ir_name.replace("::", "__")
+    }
+}
+
 pub struct AArch64AsmGenerator<'a> {
     module: &'a ir::Module,
     registry: &'a ir::Registry,
@@ -193,9 +201,10 @@ impl<'a> AArch64AsmGenerator<'a> {
         layouts: &StructLayouts,
         func: &ir::Function,
     ) -> Result<GeneratedFunction, Error> {
+        let symbol = lower_link_symbol(&func.identifier);
         let Some(blocks) = func.blocks.as_ref() else {
             return Ok(GeneratedFunction {
-                symbol: func.identifier.clone(),
+                symbol,
                 frame_size: 0,
                 insts: Vec::new(),
             });
@@ -208,7 +217,7 @@ impl<'a> AArch64AsmGenerator<'a> {
 
         {
             let mut ctx = FunctionGenerator {
-                func_id: &func.identifier,
+                func_id: &symbol,
                 frame: &frame,
                 layouts,
                 insts: &mut insts,
@@ -225,7 +234,7 @@ impl<'a> AArch64AsmGenerator<'a> {
         let insts = rewrite_insts(&insts, &alloc, &frame)?;
 
         Ok(GeneratedFunction {
-            symbol: func.identifier.clone(),
+            symbol,
             frame_size: frame.frame_size_aligned(),
             insts,
         })

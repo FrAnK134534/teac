@@ -1,0 +1,55 @@
+use std;
+
+fn fibonacci(n:i32) -> i32 {
+    let a:i32 = 0;
+    let b:i32 = 1;
+    for i in 0..n {
+        let tmp:i32 = b;
+        b = a + b;
+        a = tmp;
+    }
+    return a;
+}
+
+fn factorial(n:i32) -> i32 {
+    let result:i32 = 1;
+    for i in 1..(n + 1) {
+        result = result * i;
+    }
+    return result;
+}
+
+fn power(base:i32, exp:i32) -> i32 {
+    let result:i32 = 1;
+    for i in 0..exp {
+        result = result * base;
+    }
+    return result;
+}
+
+fn main() -> i32 {
+    for i in 0..10 {
+        std::putint(fibonacci(i));
+        std::putch(10);
+    }
+
+    for i in 1..8 {
+        std::putint(factorial(i));
+        std::putch(10);
+    }
+
+    std::putint(power(2, 10));
+    std::putch(10);
+
+    // Mixing for and while
+    let sum:i32 = 0;
+    let k:i32 = 1;
+    while k < 20 {
+        sum = sum + k;
+        k = k * 2;
+    }
+    std::putint(sum);
+    std::putch(10);
+
+    return 0;
+}

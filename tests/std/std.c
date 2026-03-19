@@ -29,6 +29,14 @@ int getch(void) {
 void putint(int a) { printf("%d", a); }
 void putch(int a) { printf("%c", a); }
 
+float getfloat(void) {
+    float t;
+    scanf("%f", &t);
+    return t;
+}
+
+void putfloat(float a) { printf("%f", a); }
+
 void putarray(int n, int a[]) {
     printf("%d:", n);
     for (int i = 0; i < n; i++) printf(" %d", a[i]);

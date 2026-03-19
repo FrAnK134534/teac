@@ -1,0 +1,46 @@
+use std;
+
+struct Acc {
+    sum: i32,
+    cnt: i32
+}
+
+impl Acc {
+    fn push(&mut self, v: i32) {
+        self.sum = self.sum + v;
+        self.cnt = self.cnt + 1;
+    }
+
+    fn consume_until(&mut self, n: i32) -> i32 {
+        let i: i32 = 0;
+        while i < n {
+            let twice_half: i32 = i / 2;
+            twice_half = twice_half * 2;
+            if twice_half == i {
+                self.push(i);
+            } else {
+                Self::push(i + 1);
+            }
+            i = i + 1;
+        }
+        return self.sum;
+    }
+
+    fn avg_floor(&self) -> i32 {
+        return self.sum / self.cnt;
+    }
+}
+
+let acc: [Acc; 1];
+
+fn main() -> i32 {
+    acc[0].sum = 0;
+    acc[0].cnt = 0;
+
+    std::putint(acc[0].consume_until(6));
+    std::putch(10);
+    std::putint(acc[0].avg_floor());
+    std::putch(10);
+
+    return acc[0].cnt;
+}

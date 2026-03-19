@@ -1,0 +1,47 @@
+use std;
+
+struct Pair {
+    a: i32,
+    b: i32
+}
+
+impl Pair {
+    fn sum(&self) -> i32 {
+        return self.a + self.b;
+    }
+
+    fn scale_add(&mut self, k: i32) -> i32 {
+        self.a = self.a * k;
+        self.b = self.b * k;
+        return self.sum();
+    }
+}
+
+let p: [Pair; 1];
+let arr: [Pair; 3];
+
+fn fill() {
+    let i: i32 = 0;
+    while i < 3 {
+        arr[i].a = i + 1;
+        arr[i].b = (i + 1) * 2;
+        i = i + 1;
+    }
+}
+
+fn main() -> i32 {
+    p[0].a = 2;
+    p[0].b = 3;
+    std::putint(p[0].sum());
+    std::putch(10);
+    std::putint(Pair::sum(p[0]));
+    std::putch(10);
+
+    fill();
+    std::putint(arr[1].scale_add(3));
+    std::putch(10);
+    std::putint(Pair::sum(arr[1]));
+    std::putch(10);
+
+    return arr[1].sum();
+}

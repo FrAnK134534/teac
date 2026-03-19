@@ -1,0 +1,171 @@
+use std;
+
+// Scaled dot-product attention (integer-only, no softmax)
+//   scores = Q @ K^T          [batch, head, seq, seq]
+//   out    = scores @ V        [batch, head, seq, dim]
+//
+// batch=2  head=4  seq=8  dim=16
+
+fn main() -> i32
+{
+    let q: [[[[i32; 16]; 8]; 4]; 2];
+    let k: [[[[i32; 16]; 8]; 4]; 2];
+    let v: [[[[i32; 16]; 8]; 4]; 2];
+    let scores: [[[[i32; 8]; 8]; 4]; 2];
+    let out: [[[[i32; 16]; 8]; 4]; 2];
+
+    let b:i32;
+    let h:i32;
+    let i:i32;
+    let j:i32;
+    let d:i32;
+    let val:i32;
+
+    // --- Q: sequential 1, 2, 3, ... ---
+    val = 1;
+    b = 0;
+    while b < 2 {
+        h = 0;
+        while h < 4 {
+            i = 0;
+            while i < 8 {
+                d = 0;
+                while d < 16 {
+                    q[b][h][i][d] = val;
+                    val = val + 1;
+                    d = d + 1;
+                }
+                i = i + 1;
+            }
+            h = h + 1;
+        }
+        b = b + 1;
+    }
+
+    // --- K[b][h][s][d] = d + h + 1 ---
+    b = 0;
+    while b < 2 {
+        h = 0;
+        while h < 4 {
+            i = 0;
+            while i < 8 {
+                d = 0;
+                while d < 16 {
+                    k[b][h][i][d] = d + h + 1;
+                    d = d + 1;
+                }
+                i = i + 1;
+            }
+            h = h + 1;
+        }
+        b = b + 1;
+    }
+
+    // --- V[b][h][s][d] = s * 2 + d + 1 ---
+    b = 0;
+    while b < 2 {
+        h = 0;
+        while h < 4 {
+            i = 0;
+            while i < 8 {
+                d = 0;
+                while d < 16 {
+                    v[b][h][i][d] = i * 2 + d + 1;
+                    d = d + 1;
+                }
+                i = i + 1;
+            }
+            h = h + 1;
+        }
+        b = b + 1;
+    }
+
+    // --- scores[b][h][i][j] = sum_d Q[b][h][i][d] * K[b][h][j][d] ---
+    b = 0;
+    while b < 2 {
+        h = 0;
+        while h < 4 {
+            i = 0;
+            while i < 8 {
+                j = 0;
+                while j < 8 {
+                    scores[b][h][i][j] = 0;
+                    d = 0;
+                    while d < 16 {
+                        let qv:i32;
+                        let kv:i32;
+                        let prod:i32;
+                        let old:i32;
+                        qv = q[b][h][i][d];
+                        kv = k[b][h][j][d];
+                        prod = qv * kv;
+                        old = scores[b][h][i][j];
+                        scores[b][h][i][j] = old + prod;
+                        d = d + 1;
+                    }
+                    j = j + 1;
+                }
+                i = i + 1;
+            }
+            h = h + 1;
+        }
+        b = b + 1;
+    }
+
+    // --- out[b][h][i][d] = sum_j scores[b][h][i][j] * V[b][h][j][d] ---
+    b = 0;
+    while b < 2 {
+        h = 0;
+        while h < 4 {
+            i = 0;
+            while i < 8 {
+                d = 0;
+                while d < 16 {
+                    out[b][h][i][d] = 0;
+                    j = 0;
+                    while j < 8 {
+                        let sv:i32;
+                        let vv:i32;
+                        let prod:i32;
+                        let old:i32;
+                        sv = scores[b][h][i][j];
+                        vv = v[b][h][j][d];
+                        prod = sv * vv;
+                        old = out[b][h][i][d];
+                        out[b][h][i][d] = old + prod;
+                        j = j + 1;
+                    }
+                    d = d + 1;
+                }
+                i = i + 1;
+            }
+            h = h + 1;
+        }
+        b = b + 1;
+    }
+
+    // --- print output ---
+    b = 0;
+    while b < 2 {
+        h = 0;
+        while h < 4 {
+            i = 0;
+            while i < 8 {
+                d = 0;
+                while d < 16 {
+                    let ov:i32;
+                    ov = out[b][h][i][d];
+                    std::putint(ov);
+                    std::putch(32);
+                    d = d + 1;
+                }
+                std::putch(10);
+                i = i + 1;
+            }
+            h = h + 1;
+        }
+        b = b + 1;
+    }
+
+    return 0;
+}

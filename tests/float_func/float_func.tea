@@ -1,0 +1,42 @@
+use std;
+
+fn fadd(a:f32, b:f32) -> f32 {
+    return a + b;
+}
+
+fn fmul(a:f32, b:f32) -> f32 {
+    return a * b;
+}
+
+fn compute(x:f32, y:f32, n:i32) -> f32 {
+    let result:f32 = x;
+    let i:i32 = 0;
+    while i < n {
+        result = result + y;
+        i = i + 1;
+    }
+    return result;
+}
+
+fn main() -> i32 {
+    let a:f32 = 1.5;
+    let b:f32 = 2.5;
+
+    let s:f32 = fadd(a, b);
+    let si:i32 = s as i32;
+    std::putint(si);
+    std::putch(10);
+
+    let p:f32 = fmul(a, b);
+    let pi:i32 = p as i32;
+    std::putint(pi);
+    std::putch(10);
+
+    // compute(1.0, 3.0, 5) = 1.0 + 3.0*5 = 16.0
+    let c:f32 = compute(1.0, 3.0, 5);
+    let ci:i32 = c as i32;
+    std::putint(ci);
+    std::putch(10);
+
+    return 0;
+}

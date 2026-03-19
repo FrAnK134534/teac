@@ -1,0 +1,52 @@
+use std;
+
+fn main() -> i32 {
+    // Skip i==3 and i==7: sum all others in [0,10)
+    let sum:i32 = 0;
+    for i in 0..10 {
+        if i == 3 {
+            continue;
+        }
+        if i == 7 {
+            continue;
+        }
+        sum = sum + i;
+    }
+    std::putint(sum);
+    std::putch(10);
+
+    // continue must still execute the step; loop terminates normally
+    let count:i32 = 0;
+    for j in 0..5 {
+        count = count + 1;
+        continue;
+    }
+    std::putint(count);
+    std::putch(10);
+
+    // break inside for loop
+    let bsum:i32 = 0;
+    for k in 0..100 {
+        if k == 6 {
+            break;
+        }
+        bsum = bsum + k;
+    }
+    std::putint(bsum);
+    std::putch(10);
+
+    // Nested for with continue in inner loop
+    let total:i32 = 0;
+    for i in 0..4 {
+        for j in 0..4 {
+            if j == 2 {
+                continue;
+            }
+            total = total + i * 4 + j;
+        }
+    }
+    std::putint(total);
+    std::putch(10);
+
+    return 0;
+}

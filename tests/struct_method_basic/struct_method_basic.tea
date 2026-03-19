@@ -1,0 +1,35 @@
+use std;
+
+struct Counter {
+    value: i32
+}
+
+impl Counter {
+    fn get(&self) -> i32 {
+        return self.value;
+    }
+
+    fn add(&mut self, delta: i32) -> i32 {
+        self.value = self.value + delta;
+        return self.value;
+    }
+
+    fn add_twice(&mut self, delta: i32) -> i32 {
+        self.add(delta);
+        Self::add(delta);
+        return Self::get();
+    }
+}
+
+let c: [Counter; 1];
+
+fn main() -> i32 {
+    c[0].value = 10;
+    std::putint(c[0].get());
+    std::putch(10);
+    std::putint(c[0].add_twice(7));
+    std::putch(10);
+    std::putint(Counter::get(c[0]));
+    std::putch(10);
+    return c[0].get();
+}

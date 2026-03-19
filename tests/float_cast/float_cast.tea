@@ -1,0 +1,25 @@
+use std;
+
+fn main() -> i32 {
+    let x:i32 = 42;
+    let f:f32 = x as f32;
+    let half:f32 = f / 2.0;
+    let result:i32 = half as i32;
+    std::putint(result);
+    std::putch(10);
+
+    let neg:i32 = -7;
+    let nf:f32 = neg as f32;
+    let doubled:f32 = nf * 2.0;
+    let back:i32 = doubled as i32;
+    std::putint(back);
+    std::putch(10);
+
+    // Truncation: 9.9 -> 9
+    let trunc:f32 = 9.9;
+    let ti:i32 = trunc as i32;
+    std::putint(ti);
+    std::putch(10);
+
+    return 0;
+}

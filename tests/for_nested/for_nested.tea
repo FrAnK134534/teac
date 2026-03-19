@@ -1,0 +1,29 @@
+use std;
+
+fn main() -> i32 {
+    let total:i32 = 0;
+    for i in 0..5 {
+        for j in 0..4 {
+            total = total + i * 4 + j;
+        }
+    }
+    std::putint(total);
+    std::putch(10);
+
+    let arr: [i32; 20];
+    for i in 0..4 {
+        for j in 0..5 {
+            let idx:i32 = i * 5 + j;
+            arr[idx] = (i + 1) * (j + 1);
+        }
+    }
+
+    let sum:i32 = 0;
+    for k in 0..20 {
+        sum = sum + arr[k];
+    }
+    std::putint(sum);
+    std::putch(10);
+
+    return 0;
+}

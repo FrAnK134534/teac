@@ -1,0 +1,44 @@
+use std;
+
+struct A {
+    x: i32
+}
+
+impl A {
+    fn calc(&self) -> i32 {
+        return self.x + 1;
+    }
+}
+
+struct B {
+    x: i32
+}
+
+impl B {
+    fn calc(&self) -> i32 {
+        return self.x + 10;
+    }
+
+    fn mix(&self, y: i32) -> i32 {
+        return self.calc() + y;
+    }
+}
+
+let a: [A; 1];
+let b: [B; 1];
+
+fn main() -> i32 {
+    a[0].x = 5;
+    b[0].x = 5;
+
+    std::putint(a[0].calc());
+    std::putch(10);
+    std::putint(b[0].calc());
+    std::putch(10);
+    std::putint(B::calc(b[0]));
+    std::putch(10);
+    std::putint(b[0].mix(7));
+    std::putch(10);
+
+    return a[0].calc() + b[0].calc();
+}

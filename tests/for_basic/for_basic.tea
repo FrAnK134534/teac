@@ -1,0 +1,26 @@
+use std;
+
+fn main() -> i32 {
+    let sum:i32 = 0;
+    for i in 0..10 {
+        sum = sum + i;
+    }
+    std::putint(sum);
+    std::putch(10);
+
+    let prod:i32 = 1;
+    for i in 1..6 {
+        prod = prod * i;
+    }
+    std::putint(prod);
+    std::putch(10);
+
+    let x:i32 = 100;
+    for i in 0..4 {
+        x = x / 2;
+    }
+    std::putint(x);
+    std::putch(10);
+
+    return 0;
+}

@@ -675,9 +675,108 @@ fn unique_path() {
     ensure_std();
     test_single("unique_path");
 }
-
 #[test]
 fn type_infer() {
     ensure_std();
     test_single("type_infer");
+}
+#[test]
+fn float_basic() {
+    ensure_std();
+    test_single("float_basic");
+}
+#[test]
+fn float_arith() {
+    ensure_std();
+    test_single("float_arith");
+}
+#[test]
+fn float_cmp() {
+    ensure_std();
+    test_single("float_cmp");
+}
+#[test]
+fn float_cast() {
+    ensure_std();
+    test_single("float_cast");
+}
+#[test]
+fn float_func() {
+    ensure_std();
+    test_single("float_func");
+}
+#[test]
+fn for_basic() {
+    ensure_std();
+    test_single("for_basic");
+}
+#[test]
+fn for_continue() {
+    ensure_std();
+    test_single("for_continue");
+}
+#[test]
+fn for_mixed() {
+    ensure_std();
+    test_single("for_mixed");
+}
+#[test]
+fn for_nested() {
+    ensure_std();
+    test_single("for_nested");
+}
+#[test]
+fn for_range() {
+    ensure_std();
+    test_single("for_range");
+}
+#[test]
+fn struct_method_basic() {
+    ensure_std();
+    test_single("struct_method_basic");
+}
+#[test]
+fn struct_method_calls() {
+    ensure_std();
+    test_single("struct_method_calls");
+}
+#[test]
+fn struct_method_namespace() {
+    ensure_std();
+    test_single("struct_method_namespace");
+}
+#[test]
+fn struct_method_loop() {
+    ensure_std();
+    test_single("struct_method_loop");
+}
+#[test]
+fn struct_method_nested() {
+    ensure_std();
+    test_single("struct_method_nested");
+}
+#[test]
+fn array_2d_basic() {
+    ensure_std();
+    test_single("array_2d_basic");
+}
+#[test]
+fn array_2d_init() {
+    ensure_std();
+    test_single("array_2d_init");
+}
+#[test]
+fn array_2d_matmul() {
+    ensure_std();
+    test_single("array_2d_matmul");
+}
+#[test]
+fn array_3d() {
+    ensure_std();
+    test_single("array_3d");
+}
+#[test]
+fn attention() {
+    ensure_std();
+    test_single("attention");
 }
