@@ -18,6 +18,7 @@ impl Display for TypeSpecifierInner {
         match self {
             TypeSpecifierInner::BuiltIn(b) => write!(f, "{}", b),
             TypeSpecifierInner::Composite(name) => write!(f, "{}", name),
+            TypeSpecifierInner::Reference(inner) => write!(f, "&[{}]", inner.inner),
         }
     }
 }
@@ -212,6 +213,7 @@ impl Display for ExprUnitInner {
             ExprUnitInner::FnCall(fc) => write!(f, "{}", fc),
             ExprUnitInner::ArrayExpr(ae) => write!(f, "{}", ae),
             ExprUnitInner::MemberExpr(me) => write!(f, "{}", me),
+            ExprUnitInner::Reference(id) => write!(f, "&{}", id),
         }
     }
 }

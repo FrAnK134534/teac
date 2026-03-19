@@ -36,10 +36,11 @@ impl StructLayouts {
         match dtype {
             ir::Dtype::I1 => Ok((1, 1)),
             ir::Dtype::I32 => Ok((4, 4)),
-            ir::Dtype::Ptr { .. } => Ok((8, 8)),
+            ir::Dtype::Pointer { .. } => Ok((8, 8)),
             ir::Dtype::Array { element, length } => {
+                let len = length.expect("unsized array in layout computation") as i64;
                 let (size, align) = self.size_align_of(element.as_ref())?;
-                Ok(((*length as i64) * size, align))
+                Ok((len * size, align))
             }
             ir::Dtype::Struct { type_name } => {
                 let layout = self
@@ -59,10 +60,11 @@ impl StructLayouts {
         match dtype {
             ir::Dtype::I1 => Ok((1, 1)),
             ir::Dtype::I32 => Ok((4, 4)),
-            ir::Dtype::Ptr { .. } => Ok((8, 8)),
+            ir::Dtype::Pointer { .. } => Ok((8, 8)),
             ir::Dtype::Array { element, length } => {
+                let len = length.expect("unsized array in layout computation") as i64;
                 let (s, a) = self.size_align_of(element.as_ref())?;
-                Ok(((*length as i64) * s, a))
+                Ok((len * s, a))
             }
             ir::Dtype::Struct { type_name } => self
                 .get(type_name)

@@ -67,7 +67,7 @@ impl<W: Write> IrPrinter<W> {
             .arguments
             .iter()
             .map(|var| {
-                if matches!(&var.dtype, Dtype::Ptr { .. }) {
+                if matches!(&var.dtype, Dtype::Pointer { .. }) {
                     format!("ptr %r{}", var.index)
                 } else {
                     format!("{} %r{}", var.dtype, var.index)

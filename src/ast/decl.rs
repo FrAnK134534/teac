@@ -12,7 +12,6 @@ pub struct VarDeclArray {
 pub enum VarDeclInner {
     Scalar,
     Array(Box<VarDeclArray>),
-    Slice,
 }
 
 #[derive(Debug, Clone)]

@@ -307,7 +307,7 @@ impl Display for CallStmt {
             .args
             .iter()
             .map(|a| {
-                if matches!(a.dtype(), Dtype::Ptr { .. } | Dtype::Array { .. }) {
+                if matches!(a.dtype(), Dtype::Pointer { .. } | Dtype::Array { .. }) {
                     format!("ptr {}", a)
                 } else {
                     format!("{} {}", a.dtype(), a)
@@ -371,7 +371,7 @@ impl Display for StoreStmt {
 impl Display for AllocaStmt {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.dst.dtype() {
-            Dtype::Ptr { pointee } => write!(f, "{} = alloca {}, align 4", self.dst, pointee),
+            Dtype::Pointer { pointee } => write!(f, "{} = alloca {}, align 4", self.dst, pointee),
             _ => write!(f, "{} = alloca {}, align 4", self.dst, self.dst.dtype()),
         }
     }
@@ -430,16 +430,22 @@ impl Display for LabelStmt {
 impl Display for GepStmt {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.base_ptr.dtype() {
-            Dtype::Ptr { pointee } => match pointee.as_ref() {
-                Dtype::Array { .. } => write!(
+            Dtype::Pointer { pointee } => match pointee.as_ref() {
+                Dtype::Array {
+                    length: Some(_), ..
+                }
+                | Dtype::Struct { .. } => write!(
                     f,
                     "{} = getelementptr {}, ptr {}, i32 {}, i32 {}",
                     self.new_ptr, pointee, self.base_ptr, 0, self.index,
                 ),
-                Dtype::Struct { .. } => write!(
+                Dtype::Array {
+                    element,
+                    length: None,
+                } => write!(
                     f,
-                    "{} = getelementptr {}, ptr {}, i32 {}, i32 {}",
-                    self.new_ptr, pointee, self.base_ptr, 0, self.index,
+                    "{} = getelementptr {}, ptr {}, i32 {}",
+                    self.new_ptr, element, self.base_ptr, self.index,
                 ),
                 _ => write!(
                     f,

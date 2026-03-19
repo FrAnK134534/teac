@@ -242,8 +242,8 @@ fn main() -> i32 {
     arr[30] = 1;
     arr[31] = 290;
     let t:i32;
-    t = arrCopy(arr, result);
-    t = revert(result);
+    t = arrCopy(&arr, &result);
+    t = revert(&result);
     let i:i32;
     i = 0;
     while i < 32 {
@@ -251,20 +251,20 @@ fn main() -> i32 {
         std::putint(t);
         i = i + 1;
     }
-    t = bubblesort(result);
+    t = bubblesort(&result);
     i = 0;
     while i < 32 {
         t = result[i];
         std::putint(t);
         i = i + 1;
     }
-    t = getMid(result);
+    t = getMid(&result);
     std::putint(t);
-    t = getMost(result);
+    t = getMost(&result);
     std::putint(t);
 
-    t = arrCopy(arr, result);
-    t = bubblesort(result);
+    t = arrCopy(&arr, &result);
+    t = bubblesort(&result);
     i = 0;
     while i < 32 {
         t = result[i];
@@ -272,8 +272,8 @@ fn main() -> i32 {
         i = i + 1;
     }
     
-    t = arrCopy(arr, result);
-    t = insertsort(result);
+    t = arrCopy(&arr, &result);
+    t = insertsort(&result);
     i = 0;
     while i < 32 {
         t = result[i];
@@ -281,18 +281,18 @@ fn main() -> i32 {
         i = i + 1;
     }
     
-    t = arrCopy(arr, result);
+    t = arrCopy(&arr, &result);
     i = 0;
     t = 31;
-    t = QuickSort(result, i, t);
+    t = QuickSort(&result, i, t);
     while i < 32 {
         t = result[i];
         std::putint(t);
         i = i + 1;
     }
 
-    t = arrCopy(arr, result);
-    t = calSum(result, 4);
+    t = arrCopy(&arr, &result);
+    t = calSum(&result, 4);
     i = 0;
     while i < 32 {
         t = result[i];
@@ -300,8 +300,8 @@ fn main() -> i32 {
         i = i + 1;
     }
     
-    t = arrCopy(arr, result);
-    t =  avgPooling(result, 3);
+    t = arrCopy(&arr, &result);
+    t =  avgPooling(&result, 3);
     i = 0;
     while i < 32 {
         t = result[i];

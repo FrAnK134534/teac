@@ -147,12 +147,12 @@ fn main() -> i32 {
     std::timer_start(209);
     let i:i32 = 0;
     while i < task {
-        convn(kernelid[i], a, b, n, m, c);
-        memmove(a, b, n * m);
+        convn(kernelid[i], &a, &b, n, m, c);
+        memmove(&a, &b, n * m);
         i = i + 1;
     }
     std::timer_stop(312);
-    std::putarray(n * m, a);
+    std::putarray(n * m, &a);
     
     return 0;
 }

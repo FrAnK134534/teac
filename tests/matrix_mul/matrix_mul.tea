@@ -44,7 +44,7 @@ fn main() -> i32
         b2[i]=i;
         i=i+1;
     }
-    i=mul( a0, a1,  a2, b0, b1, b2, c0, c1, c2);
+    i=mul( &a0, &a1,  &a2, &b0, &b1, &b2, &c0, &c1, &c2);
     let x:i32;
     while i<N
     {

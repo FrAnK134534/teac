@@ -11,6 +11,7 @@ pub enum BuiltIn {
 pub enum TypeSpecifierInner {
     BuiltIn(BuiltIn),
     Composite(String),
+    Reference(Box<TypeSpecifier>),
 }
 
 #[derive(Debug, Clone)]

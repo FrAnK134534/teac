@@ -82,7 +82,7 @@ fn collect_alloca_ptrs(blocks: &[ir::BasicBlock]) -> Result<HashMap<usize, ir::D
 
 fn size_align_of_alloca(dtype: &ir::Dtype, layouts: &StructLayouts) -> Result<(i64, i64), Error> {
     match dtype {
-        ir::Dtype::Ptr { pointee } => layouts.size_align_of(pointee.as_ref()),
+        ir::Dtype::Pointer { pointee } => layouts.size_align_of(pointee.as_ref()),
         ir::Dtype::Array { .. } => layouts.size_align_of(dtype),
         _ => Err(Error::UnsupportedDtype {
             dtype: dtype.clone(),

@@ -153,7 +153,7 @@ fn eval() -> i32
     {
         return panic();
     }
-    stack_push(oprs, num);
+    stack_push(&oprs, num);
     next_token();
     while cur_token == TOKEN_OTHER
     {
@@ -161,28 +161,28 @@ fn eval() -> i32
         if get_op_prec(op) == 0
         {    break;}
         next_token();
-        while (stack_size(ops)!=0) && (get_op_prec(stack_peek(ops)) >= get_op_prec(op))
+        while (stack_size(&ops)!=0) && (get_op_prec(stack_peek(&ops)) >= get_op_prec(op))
         {
-            let cur_op:i32 = stack_pop(ops);
-            let rhs:i32 = stack_pop(oprs);
-            let lhs:i32 = stack_pop(oprs);
-            stack_push(oprs, eval_op(cur_op, lhs, rhs));
+            let cur_op:i32 = stack_pop(&ops);
+            let rhs:i32 = stack_pop(&oprs);
+            let lhs:i32 = stack_pop(&oprs);
+            stack_push(&oprs, eval_op(cur_op, lhs, rhs));
         }
-        stack_push(ops, op);
+        stack_push(&ops, op);
         if cur_token != TOKEN_NUM
         {    return panic();}
-        stack_push(oprs, num);
+        stack_push(&oprs, num);
         next_token();
     }
     next_token();
-    while stack_size(ops)!=0
+    while stack_size(&ops)!=0
     {
-        let cur_op:i32 = stack_pop(ops);
-        let rhs:i32 = stack_pop(oprs);
-        let lhs:i32 = stack_pop(oprs);
-        stack_push(oprs, eval_op(cur_op, lhs, rhs));
+        let cur_op:i32 = stack_pop(&ops);
+        let rhs:i32 = stack_pop(&oprs);
+        let lhs:i32 = stack_pop(&oprs);
+        stack_push(&oprs, eval_op(cur_op, lhs, rhs));
     }
-    return stack_peek(oprs);
+    return stack_peek(&oprs);
 }
 
 fn main() -> i32

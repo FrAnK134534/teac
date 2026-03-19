@@ -595,6 +595,9 @@ impl DisplayAsTree for ExprUnit {
             ExprUnitInner::FnCall(fc) => fc.fmt_tree(f, &new_indent, true),
             ExprUnitInner::ArrayExpr(ae) => ae.fmt_tree(f, &new_indent, true),
             ExprUnitInner::MemberExpr(me) => me.fmt_tree(f, &new_indent, true),
+            ExprUnitInner::Reference(id) => {
+                writeln!(f, "{}Ref({})", tree_indent(&new_indent, true), id)
+            }
         }
     }
 }

@@ -174,7 +174,7 @@ impl AllocaAnalysis {
         for stmt in blocks.iter().flat_map(|block| block.stmts.iter()) {
             if let StmtInner::Alloca(a) = &stmt.inner {
                 if let Some(idx) = a.dst.vreg_index() {
-                    if let Dtype::Ptr { pointee } = a.dst.dtype() {
+                    if let Dtype::Pointer { pointee } = a.dst.dtype() {
                         if matches!(pointee.as_ref(), Dtype::I32) {
                             candidates.insert(idx);
                         }

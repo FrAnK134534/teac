@@ -87,7 +87,7 @@ fn main() -> i32 {
     i = 0;
     let tmp:i32;
     tmp = n - 1;
-    i = MergeSort(a, i, tmp);
+    i = MergeSort(&a, i, tmp);
     while i < n {
         tmp = a[i];
         std::putint(tmp);

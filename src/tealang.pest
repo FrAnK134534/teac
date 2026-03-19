@@ -115,10 +115,11 @@ identifier = @{
 }
 
 // Types
-// Type specification: integer type or user-defined type
-// Examples: "i32", "Node", "Queue"
+// Type specification: integer type, user-defined type, or reference type
+// Examples: "i32", "Node", "Queue", "&[i32]"
 type_spec = {
-    kw_i32
+    ampersand ~ lbracket ~ type_spec ~ rbracket   // reference type: &[T]
+    | kw_i32
     | identifier
 }
 
@@ -162,9 +163,8 @@ var_decl_list = {
 // Variable declaration: can be array or scalar, with or without type annotation
 // Examples: "n:i32", "arr: [i32; 100]", "que[1005]", "count", "input: &[i32]"
 var_decl = {
-    identifier ~ colon ~ ampersand ~ lbracket ~ type_spec ~ rbracket  // slice type: &[T] (pointer to first element)
-    | identifier ~ colon ~ lbracket ~ type_spec ~ semicolon ~ num ~ rbracket  // array with type (Rust style)
-    | identifier ~ colon ~ type_spec  // scalar with type
+    identifier ~ colon ~ lbracket ~ type_spec ~ semicolon ~ num ~ rbracket  // array with type (Rust style)
+    | identifier ~ colon ~ type_spec  // scalar with type (also handles &[T] via type_spec)
     | identifier ~ lbracket ~ num ~ rbracket  // array without type
     | identifier  // scalar without type
 }
@@ -353,10 +353,11 @@ arith_mul_op = { op_mul | op_div }
 
 // Expression units (primary expressions)
 // Using postfix syntax to handle chaining: id[0].member[1]
-// Examples: "x", "10", "arr[i]", "node.value", "std::getint()", "0-x" (negative)
+// Examples: "x", "10", "arr[i]", "node.value", "std::getint()", "0-x" (negative), "&arr"
 expr_unit = {
     lparen ~ arith_expr ~ rparen
     | fn_call
+    | ampersand ~ identifier           // address-of: &arr produces &[T] reference from array
     | op_sub ~ num  // negative number
     | num
     | identifier ~ expr_suffix*

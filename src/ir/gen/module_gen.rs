@@ -137,7 +137,13 @@ impl<'a> IrGenerator<'a> {
                 "std::putarray",
                 vec![
                     ("n".to_string(), Dtype::I32),
-                    ("a".to_string(), Dtype::ptr_to(Dtype::I32)),
+                    (
+                        "a".to_string(),
+                        Dtype::ptr_to(Dtype::Array {
+                            element: Box::new(Dtype::I32),
+                            length: None,
+                        }),
+                    ),
                 ],
                 Dtype::Void,
             ),
@@ -267,6 +273,9 @@ impl<'a> IrGenerator<'a> {
             for decl in params.decls.iter() {
                 let id = decl.identifier().ok_or(Error::SymbolMissing)?;
                 let dtype = Dtype::try_from(decl)?;
+                if matches!(&dtype, Dtype::Array { .. }) {
+                    return Err(Error::ArrayParameterNotAllowed { symbol: id });
+                }
                 arguments.push((id, dtype));
             }
         }
@@ -346,7 +355,6 @@ impl<'a> IrGenerator<'a> {
                     dtype: match &decl.inner {
                         ast::VarDeclInner::Scalar => base_dtype,
                         ast::VarDeclInner::Array(array) => Dtype::array_of(base_dtype, array.len),
-                        ast::VarDeclInner::Slice => Dtype::ptr_to(base_dtype),
                     },
                 },
             ));

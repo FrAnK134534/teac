@@ -137,10 +137,7 @@ impl<'a> FunctionGenerator<'a> {
         let (base_kind, base_slot) = self.lower_ptr(&s.base_ptr)?;
 
         match s.base_ptr.dtype() {
-            ir::Dtype::Ptr { pointee } => {
-                // Distinguish between array access and struct field access:
-                // - Array access: new_ptr.dtype() == base_ptr.dtype() (indexing into array/slice)
-                // - Struct field access: new_ptr.dtype() != base_ptr.dtype() (accessing a field)
+            ir::Dtype::Pointer { pointee } => {
                 let is_struct_field_access = matches!(pointee.as_ref(), ir::Dtype::Struct { .. })
                     && s.new_ptr.dtype() != s.base_ptr.dtype();
 
@@ -354,7 +351,7 @@ impl<'a> FunctionGenerator<'a> {
     }
 
     fn emit_call_stack_arg(&mut self, arg: &ir::Operand, stack_offset: i64) -> Result<(), Error> {
-        if matches!(arg.dtype(), ir::Dtype::Ptr { .. } | ir::Dtype::Array { .. }) {
+        if matches!(arg.dtype(), ir::Dtype::Pointer { .. } | ir::Dtype::Array { .. }) {
             self.emit_ptr_to_reg(arg, Register::Physical(16))?;
             self.insts.push(Inst::Str {
                 size: RegSize::X64,
@@ -398,7 +395,7 @@ impl<'a> FunctionGenerator<'a> {
     }
 
     fn emit_call_reg_arg(&mut self, arg: &ir::Operand, reg_idx: u8) -> Result<(), Error> {
-        if matches!(arg.dtype(), ir::Dtype::Ptr { .. } | ir::Dtype::Array { .. }) {
+        if matches!(arg.dtype(), ir::Dtype::Pointer { .. } | ir::Dtype::Array { .. }) {
             self.emit_ptr_to_reg(arg, Register::Physical(reg_idx))?;
         } else {
             let (op, _size) = self.lower_value(arg)?;
@@ -501,11 +498,11 @@ impl<'a> FunctionGenerator<'a> {
             ir::Operand::Local(l) => {
                 let size = match &l.dtype {
                     ir::Dtype::I1 | ir::Dtype::I32 => RegSize::W32,
-                    ir::Dtype::Ptr { .. } => {
+                    ir::Dtype::Pointer { .. } => {
                         if self.frame.has_alloca(l.index) {
                             return Err(Error::UnsupportedOperand {
                                 what: format!(
-                                    "value operand uses alloca pointer %r{} directly (need address-of)",
+                                    "value operand uses alloca ptr %r{} directly (need address-of)",
                                     l.index
                                 ),
                             });
@@ -556,7 +553,7 @@ impl<'a> FunctionGenerator<'a> {
                 }
                 // Otherwise, if it's a pointer type, the pointer value itself
                 // lives in a virtual register (e.g., result of a GEP or load).
-                if matches!(l.dtype, ir::Dtype::Ptr { .. }) {
+                if matches!(l.dtype, ir::Dtype::Pointer { .. }) {
                     return Ok((PtrBase::Register(vreg_index), None));
                 }
                 // Non-pointer locals cannot be used as pointer operands.

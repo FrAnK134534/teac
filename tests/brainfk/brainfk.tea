@@ -60,7 +60,7 @@ fn interpret(input: &[i32]) {
 fn main() -> i32 {
   std::timer_start(76);
   read_program();
-  interpret(program);
+  interpret(&program);
   std::putch(10);
   std::timer_stop(80);
   return 0;

@@ -211,7 +211,6 @@ fn parse_var_decl(pair: Pair) -> ParseResult<Box<ast::VarDecl>> {
     let mut identifier: Option<String> = None;
     let mut type_specifier: Rc<Option<ast::TypeSpecifier>> = Rc::new(None);
     let mut array_len: Option<usize> = None;
-    let mut is_slice = false;
 
     for inner in pair.into_inner() {
         match inner.as_rule() {
@@ -224,18 +223,13 @@ fn parse_var_decl(pair: Pair) -> ParseResult<Box<ast::VarDecl>> {
             Rule::num => {
                 array_len = Some(parse_num(inner)? as usize);
             }
-            Rule::ampersand => {
-                is_slice = true;
-            }
             _ => {}
         }
     }
 
     let identifier =
         identifier.ok_or_else(|| grammar_error("var_decl.identifier", &pair_for_error))?;
-    let inner = if is_slice {
-        ast::VarDeclInner::Slice
-    } else if let Some(len) = array_len {
+    let inner = if let Some(len) = array_len {
         ast::VarDeclInner::Array(Box::new(ast::VarDeclArray { len }))
     } else {
         ast::VarDeclInner::Scalar
@@ -251,8 +245,25 @@ fn parse_var_decl(pair: Pair) -> ParseResult<Box<ast::VarDecl>> {
 fn parse_type_spec(pair: Pair) -> ParseResult<Rc<Option<ast::TypeSpecifier>>> {
     let pos = get_pos(&pair);
 
-    for inner in pair.into_inner() {
-        match inner.as_rule() {
+    let children: Vec<_> = pair.into_inner().collect();
+
+    for child in &children {
+        match child.as_rule() {
+            Rule::ampersand => {
+                let inner_type_spec = children
+                    .iter()
+                    .find(|c| c.as_rule() == Rule::type_spec)
+                    .expect("Ref type_spec must have inner type_spec");
+                let inner = parse_type_spec(inner_type_spec.clone())?;
+                let inner_ts = inner
+                    .as_ref()
+                    .as_ref()
+                    .expect("Ref inner type_spec must not be empty");
+                return Ok(Rc::new(Some(ast::TypeSpecifier {
+                    pos,
+                    inner: ast::TypeSpecifierInner::Reference(Box::new(inner_ts.clone())),
+                })));
+            }
             Rule::kw_i32 => {
                 return Ok(Rc::new(Some(ast::TypeSpecifier {
                     pos,
@@ -262,7 +273,7 @@ fn parse_type_spec(pair: Pair) -> ParseResult<Rc<Option<ast::TypeSpecifier>>> {
             Rule::identifier => {
                 return Ok(Rc::new(Some(ast::TypeSpecifier {
                     pos,
-                    inner: ast::TypeSpecifierInner::Composite(inner.as_str().to_string()),
+                    inner: ast::TypeSpecifierInner::Composite(child.as_str().to_string()),
                 })));
             }
             _ => {}
@@ -725,6 +736,17 @@ fn parse_expr_unit(pair: Pair) -> ParseResult<Box<ast::ExprUnit>> {
         return Ok(Box::new(ast::ExprUnit {
             pos,
             inner: ast::ExprUnitInner::Num(num),
+        }));
+    }
+
+    if filtered.len() == 2
+        && filtered[0].as_rule() == Rule::ampersand
+        && filtered[1].as_rule() == Rule::identifier
+    {
+        let id = filtered[1].as_str().to_string();
+        return Ok(Box::new(ast::ExprUnit {
+            pos,
+            inner: ast::ExprUnitInner::Reference(id),
         }));
     }
 

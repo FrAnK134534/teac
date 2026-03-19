@@ -163,7 +163,7 @@ impl<'a> AArch64AsmGenerator<'a> {
                 GlobalData::Word { value }
             }
             ir::Dtype::Array { element, length } => {
-                let len = *length;
+                let len = length.expect("unsized array in global data");
                 let (elem_size, _) = layouts.size_align_of(element.as_ref())?;
 
                 if let Some(inits) = &g.initializers {

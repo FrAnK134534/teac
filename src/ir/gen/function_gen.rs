@@ -33,14 +33,14 @@ impl<'ir> FunctionGenerator<'ir> {
             let var = LocalVariable::new(dtype.clone(), self.alloc_vreg(), Some(id.to_string()));
             self.arguments.push(var.clone());
 
-            let ptr = LocalVariable::new(
+            let alloca_var = LocalVariable::new(
                 Dtype::ptr_to(dtype.clone()),
                 self.alloc_vreg(),
                 Some(id.to_string()),
             );
-            self.emit_alloca(Operand::from(ptr.clone()));
-            self.emit_store(Operand::from(var), Operand::from(ptr.clone()));
-            self.local_variables.insert(id.clone(), ptr);
+            self.emit_alloca(Operand::from(alloca_var.clone()));
+            self.emit_store(Operand::from(var), Operand::from(alloca_var.clone()));
+            self.local_variables.insert(id.clone(), alloca_var);
         }
 
         for stmt in from.stmts.iter() {
@@ -174,8 +174,6 @@ impl<'ir> FunctionGenerator<'ir> {
                     arr.len,
                 )))
             }
-            // Slice types (&[T]) are only valid for function parameters, not local variables.
-            (ast::VarDeclInner::Slice, _) => Err(Error::LocalVarDefinitionUnsupported),
             _ => Err(Error::LocalVarDefinitionUnsupported),
         }
     }
@@ -384,7 +382,17 @@ impl<'ir> FunctionGenerator<'ir> {
     fn handle_expr_unit(&mut self, unit: &ast::ExprUnit) -> Result<Operand, Error> {
         let operand = match &unit.inner {
             ast::ExprUnitInner::Num(num) => Ok(Operand::from(*num)),
-            ast::ExprUnitInner::Id(id) => self.lookup_variable(id),
+            ast::ExprUnitInner::Id(id) => {
+                let op = self.lookup_variable(id)?;
+                let is_array = matches!(
+                    op.dtype(),
+                    Dtype::Pointer { pointee } if matches!(pointee.as_ref(), Dtype::Array { .. })
+                ) || matches!(op.dtype(), Dtype::Array { .. });
+                if is_array {
+                    return Err(Error::ArrayUsedAsValue { symbol: id.clone() });
+                }
+                Ok(op)
+            }
             ast::ExprUnitInner::ArithExpr(expr) => self.handle_arith_expr(expr),
             ast::ExprUnitInner::FnCall(fn_call) => {
                 let name = fn_call.qualified_name();
@@ -417,10 +425,13 @@ impl<'ir> FunctionGenerator<'ir> {
             }
             ast::ExprUnitInner::ArrayExpr(expr) => self.handle_array_expr(expr),
             ast::ExprUnitInner::MemberExpr(expr) => self.handle_member_expr(expr),
+            ast::ExprUnitInner::Reference(id) => {
+                return self.handle_reference_expr(id);
+            }
         }?;
 
         Ok(match operand.dtype() {
-            Dtype::Ptr { pointee }
+            Dtype::Pointer { pointee }
                 if operand.is_addressable()
                     && !matches!(pointee.as_ref(), Dtype::Array { .. } | Dtype::Struct { .. }) =>
             {
@@ -435,6 +446,32 @@ impl<'ir> FunctionGenerator<'ir> {
             }
             _ => operand,
         })
+    }
+
+    fn handle_reference_expr(&mut self, id: &str) -> Result<Operand, Error> {
+        let operand = self.lookup_variable(id)?;
+        let element_type = match operand.dtype() {
+            Dtype::Pointer { pointee } => match pointee.as_ref() {
+                Dtype::Array { element, .. } => element.as_ref().clone(),
+                _ => {
+                    return Err(Error::InvalidReference {
+                        symbol: id.to_string(),
+                    });
+                }
+            },
+            Dtype::Array { element, .. } => element.as_ref().clone(),
+            _ => {
+                return Err(Error::InvalidReference {
+                    symbol: id.to_string(),
+                });
+            }
+        };
+        let target = self.alloc_temporary(Dtype::ptr_to(Dtype::Array {
+            element: Box::new(element_type),
+            length: None,
+        }));
+        self.emit_gep(target.clone(), operand, Operand::from(0i32));
+        Ok(target)
     }
 
     fn handle_arith_expr(&mut self, expr: &ast::ArithExpr) -> Result<Operand, Error> {
@@ -455,16 +492,16 @@ impl<'ir> FunctionGenerator<'ir> {
         let arr = self.handle_left_val(&expr.arr)?;
 
         let (arr, arr_dtype) = match arr.dtype() {
-            Dtype::Ptr { pointee } if matches!(pointee.as_ref(), Dtype::Ptr { .. }) => {
-                let inner_ptr = self.alloc_temporary(pointee.as_ref().clone());
-                self.emit_load(inner_ptr.clone(), arr);
-                (inner_ptr.clone(), inner_ptr.dtype().clone())
+            Dtype::Pointer { pointee } if matches!(pointee.as_ref(), Dtype::Pointer { .. }) => {
+                let loaded = self.alloc_temporary(pointee.as_ref().clone());
+                self.emit_load(loaded.clone(), arr);
+                (loaded.clone(), loaded.dtype().clone())
             }
             _ => (arr.clone(), arr.dtype().clone()),
         };
 
         let target = match &arr_dtype {
-            Dtype::Ptr { pointee } => match pointee.as_ref() {
+            Dtype::Pointer { pointee } => match pointee.as_ref() {
                 Dtype::Array { element, .. } => {
                     Ok(self.alloc_temporary(Dtype::ptr_to(element.as_ref().clone())))
                 }

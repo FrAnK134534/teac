@@ -7,29 +7,29 @@ pub enum Dtype {
     I1,
     I32,
     Struct { type_name: String },
-    Ptr { pointee: Box<Dtype> },
-    Array { element: Box<Dtype>, length: usize },
+    Pointer { pointee: Box<Dtype> },
+    Array { element: Box<Dtype>, length: Option<usize> },
     Undecided,
 }
 
 impl Dtype {
-    pub fn ptr_to(inner: Self) -> Self {
-        Self::Ptr {
-            pointee: Box::new(inner),
+    pub fn ptr_to(pointee: Self) -> Self {
+        Self::Pointer {
+            pointee: Box::new(pointee),
         }
     }
 
     pub fn array_of(elem: Self, len: usize) -> Self {
         Self::Array {
             element: Box::new(elem),
-            length: len,
+            length: Some(len),
         }
     }
 
     pub fn struct_type_name(&self) -> Option<&String> {
         match self {
             Dtype::Struct { type_name } => Some(type_name),
-            Dtype::Ptr { pointee } => pointee.struct_type_name(),
+            Dtype::Pointer { pointee } => pointee.struct_type_name(),
             Dtype::Array { element, .. } => element.struct_type_name(),
             _ => None,
         }
@@ -43,8 +43,15 @@ impl Display for Dtype {
             Dtype::I32 => write!(f, "i32"),
             Dtype::Void => write!(f, "void"),
             Dtype::Struct { type_name } => write!(f, "%{}", type_name),
-            Dtype::Ptr { .. } => write!(f, "ptr"),
-            Dtype::Array { element, length } => write!(f, "[{} x {}]", length, element.as_ref()),
+            Dtype::Pointer { .. } => write!(f, "ptr"),
+            Dtype::Array {
+                element,
+                length: Some(length),
+            } => write!(f, "[{} x {}]", length, element.as_ref()),
+            Dtype::Array {
+                element,
+                length: None,
+            } => write!(f, "{}", element.as_ref()),
             Dtype::Undecided => write!(f, "?"),
         }
     }
