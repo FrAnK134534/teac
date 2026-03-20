@@ -62,7 +62,7 @@ impl<'a> ParseContext<'a> {
         for inner in pair.into_inner() {
             match inner.as_rule() {
                 Rule::identifier => identifier = inner.as_str().to_string(),
-                Rule::var_decl_list => decls = self.parse_var_decl_list(inner)?,
+                Rule::typed_var_decl_list => decls = self.parse_typed_var_decl_list(inner)?,
                 _ => {}
             }
         }
@@ -70,10 +70,10 @@ impl<'a> ParseContext<'a> {
         Ok(Box::new(ast::StructDef { identifier, decls }))
     }
 
-    pub(crate) fn parse_var_decl_list(&self, pair: Pair) -> ParseResult<Vec<ast::VarDecl>> {
+    pub(crate) fn parse_typed_var_decl_list(&self, pair: Pair) -> ParseResult<Vec<ast::VarDecl>> {
         let mut decls = Vec::new();
         for inner in pair.into_inner() {
-            if inner.as_rule() == Rule::var_decl {
+            if inner.as_rule() == Rule::typed_var_decl {
                 decls.push(*self.parse_var_decl(inner)?);
             }
         }
@@ -326,9 +326,9 @@ impl<'a> ParseContext<'a> {
     fn parse_param_decl(&self, pair: Pair) -> ParseResult<Box<ast::ParamDecl>> {
         let pair_for_error = pair.clone();
         for inner in pair.into_inner() {
-            if inner.as_rule() == Rule::var_decl_list {
+            if inner.as_rule() == Rule::typed_var_decl_list {
                 return Ok(Box::new(ast::ParamDecl {
-                    decls: self.parse_var_decl_list(inner)?,
+                    decls: self.parse_typed_var_decl_list(inner)?,
                 }));
             }
         }

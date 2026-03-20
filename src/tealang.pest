@@ -156,14 +156,21 @@ program_element = {
 // Define a structure with named fields
 // Example: "struct Node { value:i32, next:i32 }"
 struct_def = {
-    kw_struct ~ identifier ~ lbrace ~ var_decl_list ~ rbrace
+    kw_struct ~ identifier ~ lbrace ~ typed_var_decl_list ~ rbrace
 }
 
-// Variable declarations
-// List of variable declarations separated by commas
+// Typed variable declaration: must have a type annotation (no untyped scalars)
+// Used for struct fields and function parameters where types are mandatory
+// Examples: "n:i32", "arr: [i32; 100]", "input: &[i32]"
+typed_var_decl = {
+    identifier ~ colon ~ lbracket ~ type_spec ~ semicolon ~ num ~ rbracket  // array with type
+    | identifier ~ colon ~ type_spec  // scalar with type (also handles &[T] via type_spec)
+}
+
+// Typed variable declaration list: comma-separated typed declarations
 // Example: "x:i32, y:i32, z:i32"
-var_decl_list = {
-    var_decl ~ (comma ~ var_decl)*
+typed_var_decl_list = {
+    typed_var_decl ~ (comma ~ typed_var_decl)*
 }
 
 // Variable declaration: can be array or scalar, with or without type annotation
@@ -210,10 +217,10 @@ fn_decl = {
     | kw_fn ~ identifier ~ lparen ~ param_decl? ~ rparen
 }
 
-// Parameter declaration: list of parameter variables
+// Parameter declaration: list of parameter variables (types required)
 // Example: "x:i32, y:i32" in "fn add(x:i32, y:i32) -> i32 { }"
 param_decl = {
-    var_decl_list
+    typed_var_decl_list
 }
 
 // Function definition: declaration with implementation

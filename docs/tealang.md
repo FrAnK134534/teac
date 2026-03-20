@@ -112,7 +112,12 @@ typed_array_decl  := identifier < : > < [ > typeSpec < ; > num < ] >       // ar
 varDecl := typed_array_decl
          | typed_scalar_decl
          | scalar_decl
+
+typedVarDecl := typed_array_decl
+              | typed_scalar_decl
 ```
+
+`varDecl` (with optional type) is used in `let` statements where type inference is allowed. `typedVarDecl` (type required) is used for struct fields and function parameters where types are mandatory.
 
 Since `typeSpec` includes reference types (`&[T]`), a `typed_scalar_decl` like `arr: &[i32]` declares a slice reference parameter. This form is only valid in function parameter lists — it cannot appear in `let` statements or struct fields. This constraint is enforced semantically, not syntactically.
 
@@ -155,11 +160,12 @@ let count = 0;                          // type inference scalar
 
 ## Structure Definitions
 
-Define custom types using the `struct` keyword with named fields. Struct fields use `varDecl` (scalars and arrays only; reference types are not permitted as struct fields).
+Define custom types using the `struct` keyword with named fields. Struct fields must have type annotations (reference types are not permitted as struct fields).
 
 ```
-structDef := < struct > identifier < { > varDeclList < } >
-varDeclList := varDecl (< , > varDecl)*
+structDef := < struct > identifier < { > typedVarDeclList < } >
+typedVarDeclList := typedVarDecl (< , > typedVarDecl)*
+typedVarDecl := typed_array_decl | typed_scalar_decl
 ```
 
 Example:
@@ -176,13 +182,13 @@ struct Node {
 
 ### Function Declarations
 
-Declare function signatures with optional return types. Function parameters use `varDecl`, which includes reference-typed parameters like `arr: &[i32]` via `typeSpec`.
+Declare function signatures with optional return types. Function parameters must have type annotations, including reference-typed parameters like `arr: &[i32]` via `typeSpec`.
 
 ```
 fnDeclStmt := fnDecl < ; >
 fnDecl := < fn > identifier < ( > paramDecl? < ) > < -> > typeSpec   // with return type
         | < fn > identifier < ( > paramDecl? < ) >                   // without return type
-paramDecl := varDeclList
+paramDecl := typedVarDeclList
 ```
 
 Examples:
