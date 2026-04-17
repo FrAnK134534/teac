@@ -1108,6 +1108,6 @@ fn array_3d() {
     test_ast_parse("array_3d", &["main", "cube"]);
 }
 #[test]
-fn attention() {
-    test_ast_parse("attention", &["main", "scores"]);
+fn array_attention() {
+    test_ast_parse("array_attention", &["main", "scores"]);
 }

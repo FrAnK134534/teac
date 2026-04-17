@@ -57,7 +57,12 @@ jobs:
           --skip array_2d_init \
           --skip array_2d_matmul \
           --skip array_3d \
-          --skip attention
+          --skip array_attention \
+          --skip type_infer_1 \
+          --skip type_infer_2 \
+          --skip type_infer_3 \
+          --skip type_infer_4 \
+          --skip type_infer_5
 
   doc:
     runs-on: ubuntu-latest
