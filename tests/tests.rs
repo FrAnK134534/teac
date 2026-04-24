@@ -841,7 +841,9 @@ macro_rules! asmt_tests {
     };
 }
 
-// ── Full compile-link-run tests ─────────────────────────────────────────────
+// -----------------------------------------------------------------------
+// Full compile-link-run tests
+// -----------------------------------------------------------------------
 
 full_tests! {
     dfs,
@@ -876,8 +878,7 @@ full_tests! {
     type_infer_basic,
 }
 
-// ── Return-type-inference tests (feature-gated) ─────────────────────────────
-//
+// Return-type-inference tests (feature-gated)
 // type_infer_1..5 exercise the return-type-inference pass (every `fn`
 // omits its `-> T` clause).  Without the feature the baseline treats
 // omitted returns as `-> void`, so these tests would fail spuriously.
@@ -897,7 +898,7 @@ fn type_infer_5() {
     test_compile_error("type_infer_5");
 }
 
-// ── Assignment tests (feature-gated) ────────────────────────────────────────
+// Assignment tests
 //
 // Each test first verifies AST parsing, then checks IR generation output.
 // Gated on per-feature cargo features:

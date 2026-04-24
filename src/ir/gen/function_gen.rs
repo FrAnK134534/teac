@@ -27,7 +27,9 @@ fn array_index_operand(index: usize) -> Operand {
     )
 }
 
-// ── Function entry-point generation ──────────────────────────────────────────
+// -----------------------------------------------------------------------
+// Function entry-point generation
+// -----------------------------------------------------------------------
 
 impl FunctionGenerator<'_> {
     /// Generates IR for a complete function definition.
@@ -104,7 +106,9 @@ impl FunctionGenerator<'_> {
     }
 }
 
-// ── Statement handlers ────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------
+// Statement handlers
+// -----------------------------------------------------------------------
 
 impl FunctionGenerator<'_> {
     /// Dispatches a single code-block statement to the appropriate handler.
@@ -453,7 +457,9 @@ impl FunctionGenerator<'_> {
     }
 }
 
-// ── Expression and value handlers ─────────────────────────────────────────────
+// -----------------------------------------------------------------------
+// Expression and value handlers
+// -----------------------------------------------------------------------
 
 impl FunctionGenerator<'_> {
     /// Lowers a comparison expression into a conditional branch.
@@ -728,7 +734,9 @@ impl FunctionGenerator<'_> {
     }
 }
 
-// ── Boolean expression handlers ───────────────────────────────────────────────
+// -----------------------------------------------------------------------
+// Boolean expression handlers
+// -----------------------------------------------------------------------
 
 impl FunctionGenerator<'_> {
     /// Lowers a boolean expression to a materialized `i32` value (0 or 1).
