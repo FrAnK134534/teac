@@ -1,4 +1,5 @@
 fn getint()->i32;
+
 fn getch()->i32;
 fn timer_start(lineno:i32);
 fn timer_stop(lineno:i32);

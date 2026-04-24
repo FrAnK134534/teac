@@ -54,7 +54,10 @@ impl FunctionGenerator<'_> {
 
         let arguments = function_type.arguments.clone();
         let return_dtype = function_type.return_dtype.clone();
-        self.emit_label(BlockLabel::Function(identifier.clone()));
+        // The entry label is the function's link name so that the IR's
+        // entry-block label matches the `@symbol` emitted by the printer.
+        let entry_label = self.resolve_link_name(identifier);
+        self.emit_label(BlockLabel::Function(entry_label));
 
         // Spill every argument to the stack (alloca + store) so they are addressable.
         for (id, dtype) in &arguments {
@@ -323,7 +326,8 @@ impl FunctionGenerator<'_> {
                          which FunctionType::try_from should have rejected"
                     ),
                 };
-                self.emit_call(function_name, retval, args);
+                let link_name = self.resolve_link_name(&function_name);
+                self.emit_call(link_name, retval, args);
                 Ok(())
             }
         }
@@ -530,7 +534,8 @@ impl FunctionGenerator<'_> {
                     let rval = self.handle_right_val(arg)?;
                     args.push(rval);
                 }
-                self.emit_call(name, Some(res.clone()), args);
+                let link_name = self.resolve_link_name(&name);
+                self.emit_call(link_name, Some(res.clone()), args);
 
                 Ok(res)
             }

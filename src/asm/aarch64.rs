@@ -35,15 +35,6 @@ struct GeneratedFunction {
     insts: Vec<Inst>,
 }
 
-fn lower_link_symbol(ir_name: &str, target: Target) -> String {
-    let base = if let Some(stripped) = ir_name.strip_prefix("std::") {
-        stripped.to_string()
-    } else {
-        ir_name.replace("::", "__")
-    };
-    target.mangle_symbol(&base)
-}
-
 pub struct AArch64AsmGenerator<'a> {
     module: &'a ir::Module,
     registry: &'a ir::Registry,
@@ -86,7 +77,7 @@ impl<'a> Generator for AArch64AsmGenerator<'a> {
             };
             self.functions.push(Self::handle_function(
                 &layouts,
-                &func.identifier,
+                &func.link_name,
                 body,
                 self.target,
             )?);
@@ -216,11 +207,11 @@ impl<'a> AArch64AsmGenerator<'a> {
 
     fn handle_function(
         layouts: &StructLayouts,
-        identifier: &str,
+        link_name: &str,
         body: &ir::FunctionBody,
         target: Target,
     ) -> Result<GeneratedFunction, Error> {
-        let symbol = lower_link_symbol(identifier, target);
+        let symbol = target.mangle_symbol(link_name);
         let mut frame = StackFrame::from_blocks(&body.blocks, layouts)?;
         let mut next_vreg = body.next_vreg;
         let mut cond_map: HashMap<usize, Cond> = HashMap::new();

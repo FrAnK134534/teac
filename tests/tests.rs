@@ -474,6 +474,128 @@ fn test_ast_parse(test_name: &str, must_contain: &[&str]) {
     }
 }
 
+/// IR-level test: generates IR with `teac --emit ir`, compiles the IR
+/// together with `std.c` via `clang`, runs the resulting executable,
+/// and compares the output against the `.out` golden file — the same
+/// correctness criterion as the end-to-end tests.
+///
+/// Requires `clang` on PATH.
+#[allow(dead_code)]
+fn test_ir(test_name: &str) {
+    let base_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests");
+    let case_dir = base_dir.join(test_name);
+    let std_dir = base_dir.join("std");
+    let tea = case_dir.join(format!("{test_name}.tea"));
+    assert!(
+        tea.is_file(),
+        "✗ {test_name}: Test file not found at {}",
+        tea.display()
+    );
+
+    let build_dir = case_dir.join("build");
+    fs::create_dir_all(&build_dir).expect("Failed to create build dir");
+
+    // Step 1: Generate IR
+    let tool = Path::new(env!("CARGO_BIN_EXE_teac"));
+    let ir_output = Command::new(tool)
+        .arg(&tea)
+        .arg("--emit")
+        .arg("ir")
+        .output()
+        .expect("Failed to execute teac");
+
+    let stderr = String::from_utf8_lossy(&ir_output.stderr);
+    assert!(
+        ir_output.status.success(),
+        "✗ IR generation failed for {test_name} (exit {}). stderr:\n{stderr}",
+        ir_output.status.code().unwrap_or(-1)
+    );
+    assert!(
+        !ir_output.stdout.is_empty(),
+        "✗ IR output is empty for {test_name}"
+    );
+
+    let ll_path = build_dir.join(format!("{test_name}.ll"));
+    fs::write(&ll_path, &ir_output.stdout)
+        .unwrap_or_else(|e| panic!("Failed to write {}: {e}", ll_path.display()));
+
+    // Step 2: Compile IR + std.c → executable
+    let std_c = std_dir.join("std.c");
+    let exe = build_dir.join(format!("{test_name}_ir"));
+
+    let clang_output = Command::new("clang")
+        .arg("-Wno-override-module")
+        .arg(&ll_path)
+        .arg(&std_c)
+        .arg("-o")
+        .arg(&exe)
+        .output()
+        .expect("Failed to execute clang");
+
+    let clang_stderr = String::from_utf8_lossy(&clang_output.stderr);
+    assert!(
+        clang_output.status.success(),
+        "✗ clang failed for {test_name} (exit {}). stderr:\n{clang_stderr}",
+        clang_output.status.code().unwrap_or(-1)
+    );
+
+    // Step 3: Run the executable
+    let input = case_dir.join(format!("{test_name}.in"));
+    let input_path = if input.is_file() {
+        Some(input.as_path())
+    } else {
+        None
+    };
+
+    let (run_code, run_stdout, run_stderr) =
+        run_native(&exe, input_path).expect("Failed to run IR executable");
+
+    if !run_stderr.is_empty() {
+        let stderr_str = String::from_utf8_lossy(&run_stderr);
+        if stderr_str.contains("error") || stderr_str.contains("fault") {
+            panic!("✗ IR executable for {test_name} produced stderr:\n{stderr_str}");
+        }
+    }
+
+    // Step 4: Compare output against golden .out file
+    let expected_out = case_dir.join(format!("{test_name}.out"));
+    let actual_out = build_dir.join(format!("{test_name}_ir.out"));
+
+    fs::write(&actual_out, &run_stdout)
+        .unwrap_or_else(|e| panic!("Failed to write {}: {e}", actual_out.display()));
+    append_line(&actual_out, &run_code.to_string());
+
+    match read_to_string_if_exists(&expected_out).expect("Failed to read expected output file") {
+        Some(exp) => {
+            let got = fs::read_to_string(&actual_out)
+                .unwrap_or_else(|e| panic!("Failed to read {}: {e}", actual_out.display()));
+            let exp_norm = normalize_for_diff(&exp);
+            let got_norm = normalize_for_diff(&got);
+            if exp_norm != got_norm {
+                let ir_text = String::from_utf8_lossy(&ir_output.stdout);
+                panic!(
+                    "✗ IR output mismatch for {test_name}\n\
+                     --- Expected:\n{exp}\
+                     --- Got:\n{got}\
+                     --- IR ({} lines):\n{}",
+                    ir_text.lines().count(),
+                    if ir_text.len() > 3000 {
+                        format!("{}...(truncated)", &ir_text[..3000])
+                    } else {
+                        ir_text.to_string()
+                    }
+                );
+            }
+        }
+        None => {
+            panic!(
+                "✗ No expected output file for {test_name} at {}",
+                expected_out.display()
+            );
+        }
+    }
+}
+
 /// Negative compilation test: asserts that `teac` rejects the fixture
 /// and prints a non-empty diagnostic.  The exact message is not checked
 /// so students have freedom in how they phrase their diagnostics.
@@ -513,8 +635,7 @@ fn test_compile_error(test_name: &str) {
          diagnostic explaining what is wrong."
     );
     assert!(
-        !stderr.contains("not yet implemented")
-            && !stderr.contains("not implemented"),
+        !stderr.contains("not yet implemented") && !stderr.contains("not implemented"),
         "✗ Compilation failed for {test_name}, but the failure came from an \
          unimplemented `todo!()` in the student's code, not from a real \
          diagnostic.  Finish implementing the pass before this negative \
@@ -598,8 +719,8 @@ fn test_single(test_name: &str) {
     // -----------------------------------------------------------------------
     let (run_code, run_stdout, run_stderr) = if is_native_macos() {
         let exe = out_dir.join(test_name);
-        let (link_code, link_err) = link_local(&out_dir, "cc", &output_path, &stdlib, &exe, &[])
-            .expect("Failed to link");
+        let (link_code, link_err) =
+            link_local(&out_dir, "cc", &output_path, &stdlib, &exe, &[]).expect("Failed to link");
         assert!(
             link_code == 0,
             "✗ Linking failed (exit {link_code}). Stderr:\n{}",
@@ -628,8 +749,8 @@ fn test_single(test_name: &str) {
         run_with_qemu(&exe, input_path).expect("Failed to run with QEMU")
     } else {
         let exe = out_dir.join(test_name);
-        let (link_code, link_err) = link_local(&out_dir, "gcc", &output_path, &stdlib, &exe, &[])
-            .expect("Failed to link");
+        let (link_code, link_err) =
+            link_local(&out_dir, "gcc", &output_path, &stdlib, &exe, &[]).expect("Failed to link");
         assert!(
             link_code == 0,
             "✗ Linking failed (exit {link_code}). Stderr:\n{}",
@@ -698,14 +819,23 @@ macro_rules! full_tests {
     };
 }
 
-/// Declares a batch of `test_ast_parse` tests from `name => [idents]` pairs.
+/// Declares a batch of assignment tests.  Each test first verifies
+/// that `teac --emit ast` succeeds and the AST contains expected
+/// identifiers, then compiles the generated IR with `clang`, runs
+/// it, and compares the output against the `.out` golden file.
+///
+/// With `--features ast-only`, only the AST parsing stage runs (for use
+/// before IR generation is implemented).
 #[allow(unused_macros)]
-macro_rules! ast_tests {
-    ($($name:ident => [$($ident:literal),* $(,)?]),* $(,)?) => {
+macro_rules! asmt_tests {
+    ($($name:ident => [$($ast_pat:literal),* $(,)?]),* $(,)?) => {
         $(
             #[test]
             fn $name() {
-                test_ast_parse(stringify!($name), &[$($ident),*]);
+                test_ast_parse(stringify!($name), &[$($ast_pat),*]);
+                if !cfg!(feature = "ast-only") {
+                    test_ir(stringify!($name));
+                }
             }
         )*
     };
@@ -767,19 +897,17 @@ fn type_infer_5() {
     test_compile_error("type_infer_5");
 }
 
-// ── AST parse-only tests (feature-gated) ────────────────────────────────────
+// ── Assignment tests (feature-gated) ────────────────────────────────────────
 //
-// These tests cover language features whose parser support is not yet
-// implemented.  Each group is gated on its own Cargo feature (all off by
-// default) so `cargo test` stays green until the corresponding syntax
-// lands.  Turn a feature on to opt in to its tests:
+// Each test first verifies AST parsing, then checks IR generation output.
+// Gated on per-feature cargo features:
 //   cargo test --features float
 //   cargo test --features for-loop
 //   cargo test --features struct-method
 //   cargo test --features multi-dim-array
 
 #[cfg(feature = "float")]
-ast_tests! {
+asmt_tests! {
     float_basic => ["main"],
     float_arith => ["main", "matmul", "print_row"],
     float_cmp   => ["main"],
@@ -788,7 +916,7 @@ ast_tests! {
 }
 
 #[cfg(feature = "for-loop")]
-ast_tests! {
+asmt_tests! {
     for_basic    => ["main", "sum", "prod"],
     for_continue => ["main", "sum", "count", "bsum", "total"],
     for_mixed    => ["main", "fibonacci", "factorial", "power"],
@@ -797,7 +925,7 @@ ast_tests! {
 }
 
 #[cfg(feature = "struct-method")]
-ast_tests! {
+asmt_tests! {
     struct_method_basic     => ["main", "Counter", "get", "add", "value"],
     struct_method_calls     => ["main", "Pair", "sum", "fill"],
     struct_method_namespace => ["main", "calc", "mix"],
@@ -806,7 +934,7 @@ ast_tests! {
 }
 
 #[cfg(feature = "multi-dim-array")]
-ast_tests! {
+asmt_tests! {
     array_2d_basic  => ["main", "mat"],
     array_2d_init   => ["main", "mat", "sum"],
     array_2d_matmul => ["main"],
