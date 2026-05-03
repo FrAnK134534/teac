@@ -139,6 +139,12 @@ impl<'a> ParseContext<'a> {
                         inner: ast::TypeSpecifierInner::BuiltIn(ast::BuiltIn::Int),
                     }));
                 }
+                Rule::kw_f32 => {
+                    return Ok(Some(ast::TypeSpecifier {
+                        pos,
+                        inner: ast::TypeSpecifierInner::BuiltIn(ast::BuiltIn::Float),
+                    }));
+                }
                 Rule::identifier => {
                     return Ok(Some(ast::TypeSpecifier {
                         pos,

@@ -1,5 +1,5 @@
 use super::ops::*;
-use super::types::Pos;
+use super::types::{Pos, TypeSpecifier};
 
 #[derive(Debug, Clone)]
 pub struct LeftVal {
@@ -45,9 +45,16 @@ pub struct ArithBiOpExpr {
 }
 
 #[derive(Debug, Clone)]
+pub struct CastExpr {
+    pub expr: Box<ExprUnit>,
+    pub target_type: TypeSpecifier,
+}
+
+#[derive(Debug, Clone)]
 pub enum ArithExprInner {
     ArithBiOpExpr(Box<ArithBiOpExpr>),
     ExprUnit(Box<ExprUnit>),
+    CastExpr(Box<CastExpr>),
 }
 
 #[derive(Debug, Clone)]
@@ -122,6 +129,7 @@ impl FnCall {
 #[derive(Debug, Clone)]
 pub enum ExprUnitInner {
     Num(i32),
+    Float(f32),
     Id(String),
     ArithExpr(Box<ArithExpr>),
     FnCall(Box<FnCall>),

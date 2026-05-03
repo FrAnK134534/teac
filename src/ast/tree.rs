@@ -289,6 +289,7 @@ impl DisplayAsTree for CodeBlockStmtInner {
             CodeBlockStmtInner::Assignment(stmt) => stmt.fmt_tree(f, indent_levels, is_last),
             CodeBlockStmtInner::Call(stmt) => stmt.fmt_tree(f, indent_levels, is_last),
             CodeBlockStmtInner::If(stmt) => stmt.fmt_tree(f, indent_levels, is_last),
+            CodeBlockStmtInner::For(stmt) => stmt.fmt_tree(f, indent_levels, is_last),
             CodeBlockStmtInner::While(stmt) => stmt.fmt_tree(f, indent_levels, is_last),
             CodeBlockStmtInner::Return(stmt) => stmt.fmt_tree(f, indent_levels, is_last),
             CodeBlockStmtInner::Continue(stmt) => stmt.fmt_tree(f, indent_levels, is_last),
@@ -346,6 +347,28 @@ impl DisplayAsTree for IfStmt {
             e.fmt_tree(f, &new_indent, true)?;
         }
         Ok(())
+    }
+}
+
+impl DisplayAsTree for ForStmt {
+    fn fmt_tree(
+        &self,
+        f: &mut Formatter<'_>,
+        indent_levels: &[bool],
+        is_last: bool,
+    ) -> Result<(), Error> {
+        writeln!(
+            f,
+            "{}ForStmt {} in {}..{}",
+            tree_indent(indent_levels, is_last),
+            self.iter_id,
+            self.start,
+            self.end
+        )?;
+        let mut new_indent = indent_levels.to_vec();
+        new_indent.push(is_last);
+        writeln!(f, "{}Body:", tree_indent(&new_indent, false))?;
+        self.stmts.fmt_tree(f, &new_indent, true)
     }
 }
 
@@ -519,7 +542,27 @@ impl DisplayAsTree for ArithExpr {
         match &self.inner {
             ArithExprInner::ArithBiOpExpr(expr) => expr.fmt_tree(f, &new_indent, true),
             ArithExprInner::ExprUnit(unit) => unit.fmt_tree(f, &new_indent, true),
+            ArithExprInner::CastExpr(cast) => cast.fmt_tree(f, &new_indent, true),
         }
+    }
+}
+
+impl DisplayAsTree for CastExpr {
+    fn fmt_tree(
+        &self,
+        f: &mut Formatter<'_>,
+        indent_levels: &[bool],
+        is_last: bool,
+    ) -> Result<(), Error> {
+        writeln!(
+            f,
+            "{}CastExpr -> {}",
+            tree_indent(indent_levels, is_last),
+            self.target_type.inner
+        )?;
+        let mut new_indent = indent_levels.to_vec();
+        new_indent.push(is_last);
+        self.expr.fmt_tree(f, &new_indent, true)
     }
 }
 
@@ -596,6 +639,7 @@ impl DisplayAsTree for ExprUnit {
         new_indent.push(is_last);
         match &self.inner {
             ExprUnitInner::Num(n) => writeln!(f, "{}Num({})", tree_indent(&new_indent, true), n),
+            ExprUnitInner::Float(fl) => writeln!(f, "{}Float({})", tree_indent(&new_indent, true), fl),
             ExprUnitInner::Id(id) => writeln!(f, "{}Id({})", tree_indent(&new_indent, true), id),
             ExprUnitInner::ArithExpr(ae) => ae.fmt_tree(f, &new_indent, true),
             ExprUnitInner::FnCall(fc) => fc.fmt_tree(f, &new_indent, true),

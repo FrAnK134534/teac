@@ -1,6 +1,6 @@
 use crate::ast;
 
-use super::common::{get_pos, grammar_error, parse_num, Pair, ParseResult, Rule};
+use super::common::{get_pos, grammar_error, parse_num, parse_float, Pair, ParseResult, Rule};
 use super::ParseContext;
 
 impl<'a> ParseContext<'a> {
@@ -249,6 +249,49 @@ impl<'a> ParseContext<'a> {
         Ok(expr)
     }
 
+    fn parse_cast_expr(&self, pair: Pair) -> ParseResult<Box<ast::ArithExpr>> {
+        let pair_for_error = pair.clone();
+        let pos = get_pos(&pair);
+
+        let mut expr_unit = None;
+        let mut target_type: Option<ast::TypeSpecifier> = None;
+
+        for inner in pair.into_inner() {
+            match inner.as_rule() {
+                Rule::expr_unit => expr_unit = Some(self.parse_expr_unit(inner)?),
+                Rule::type_spec => {
+                    let shared = self.parse_type_spec(inner)?;
+                    let maybe_type = shared.as_ref();
+                    let ty_ref = maybe_type
+                        .as_ref()
+                        .ok_or_else(|| grammar_error("cast_expr.type_spec", &pair_for_error))?;
+                    let ty: ast::TypeSpecifier = (*ty_ref).clone();
+                    target_type = Some(ty);
+                }
+                _ => {}
+            }
+        }
+
+        let expr_unit =
+            expr_unit.ok_or_else(|| grammar_error("cast_expr.expr_unit", &pair_for_error))?;
+
+        if let Some(target_type) = target_type {
+            Ok(Box::new(ast::ArithExpr {
+                pos,
+                inner: ast::ArithExprInner::CastExpr(Box::new(ast::CastExpr {
+                    expr: expr_unit,
+                    target_type,
+                })),
+            }))
+        } else {
+            Ok(Box::new(ast::ArithExpr {
+                pos,
+                inner: ast::ArithExprInner::ExprUnit(expr_unit),
+            }))
+        }
+    }
+
+
     fn parse_arith_term(&self, pair: Pair) -> ParseResult<Box<ast::ArithExpr>> {
         let pair_for_error = pair.clone();
         let inner_pairs: Vec<_> = pair.into_inner().collect();
@@ -257,21 +300,13 @@ impl<'a> ParseContext<'a> {
             return Err(grammar_error("arith_term", &pair_for_error));
         }
 
-        let first_unit = self.parse_expr_unit(inner_pairs[0].clone())?;
-        let mut expr = Box::new(ast::ArithExpr {
-            pos: first_unit.pos,
-            inner: ast::ArithExprInner::ExprUnit(first_unit),
-        });
+        let mut expr = self.parse_cast_expr(inner_pairs[0].clone())?;
 
         let mut i = 1;
         while i < inner_pairs.len() {
             if inner_pairs[i].as_rule() == Rule::arith_mul_op {
                 let op = self.parse_arith_mul_op(inner_pairs[i].clone())?;
-                let right_unit = self.parse_expr_unit(inner_pairs[i + 1].clone())?;
-                let right = Box::new(ast::ArithExpr {
-                    pos: right_unit.pos,
-                    inner: ast::ArithExprInner::ExprUnit(right_unit),
-                });
+                let right = self.parse_cast_expr(inner_pairs[i + 1].clone())?;
 
                 expr = Box::new(ast::ArithExpr {
                     pos: expr.pos,
@@ -325,6 +360,18 @@ impl<'a> ParseContext<'a> {
             .cloned()
             .collect();
 
+
+        if filtered.len() == 2
+            && filtered[0].as_rule() == Rule::op_sub
+            && filtered[1].as_rule() == Rule::float_literal
+        {
+            let num = parse_float(filtered[1].clone())?;
+            return Ok(Box::new(ast::ExprUnit {
+                pos,
+                inner: ast::ExprUnitInner::Float(-num),
+            }));
+        }
+
         if filtered.len() == 2
             && filtered[0].as_rule() == Rule::op_sub
             && filtered[1].as_rule() == Rule::num
@@ -347,6 +394,14 @@ impl<'a> ParseContext<'a> {
             return Ok(Box::new(ast::ExprUnit {
                 pos,
                 inner: ast::ExprUnitInner::FnCall(self.parse_fn_call(filtered[0].clone())?),
+            }));
+        }
+
+        if filtered.len() == 1 && filtered[0].as_rule() == Rule::float_literal {
+            let num = parse_float(filtered[0].clone())?;
+            return Ok(Box::new(ast::ExprUnit {
+                pos,
+                inner: ast::ExprUnitInner::Float(num),
             }));
         }
 

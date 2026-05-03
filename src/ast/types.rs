@@ -3,6 +3,7 @@ pub type Pos = usize;
 #[derive(Debug, Clone)]
 pub enum BuiltIn {
     Int,
+    Float,
 }
 
 #[derive(Debug, Clone)]
