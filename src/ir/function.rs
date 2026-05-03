@@ -8,7 +8,7 @@
 
 use super::error::Error;
 use super::module::Registry;
-use super::stmt::{ArithBinOp, CmpPredicate, Stmt};
+use super::stmt::{ArithBinOp, CmpPredicate, FCmpPredicate, FloatBinOp, Stmt};
 use super::types::Dtype;
 use super::value::{GlobalDef, GlobalRef, Local, LocalId, Operand};
 use indexmap::IndexMap;
@@ -121,6 +121,8 @@ pub struct FunctionGenerator<'ir> {
     /// Counter for allocating unique basic block label indices; starts at `1`
     /// because index `0` is reserved for the implicit function-entry block.
     pub next_basic_block: usize,
+    /// Return type of the function currently being lowered.
+    pub current_return_dtype: Option<Dtype>,
 }
 
 impl<'ir> FunctionGenerator<'ir> {
@@ -145,6 +147,7 @@ impl<'ir> FunctionGenerator<'ir> {
             arguments: Vec::new(),
             next_vreg: 0,
             next_basic_block: 1,
+            current_return_dtype: None,
         }
     }
 
@@ -286,10 +289,20 @@ impl FunctionGenerator<'_> {
         self.irs.push(Stmt::as_biop(op, left, right, dst));
     }
 
+    /// Emits a floating-point binary operation on `left` and `right`.
+    pub fn emit_fbiop(&mut self, op: FloatBinOp, left: Operand, right: Operand, dst: Operand) {
+        self.irs.push(Stmt::as_fbiop(op, left, right, dst));
+    }
+
     /// Emits an integer comparison instruction using predicate `op` on `left` and
     /// `right`, storing the boolean result in `dst`.
     pub fn emit_cmp(&mut self, op: CmpPredicate, left: Operand, right: Operand, dst: Operand) {
         self.irs.push(Stmt::as_cmp(op, left, right, dst));
+    }
+
+    /// Emits a floating-point comparison instruction.
+    pub fn emit_fcmp(&mut self, op: FCmpPredicate, left: Operand, right: Operand, dst: Operand) {
+        self.irs.push(Stmt::as_fcmp(op, left, right, dst));
     }
 
     /// Emits a conditional branch instruction that jumps to `true_label` when `cond`
@@ -320,5 +333,15 @@ impl FunctionGenerator<'_> {
     /// Emits a return instruction, optionally carrying a return value `val`.
     pub fn emit_return(&mut self, val: Option<Operand>) {
         self.irs.push(Stmt::as_return(val));
+    }
+
+    /// Emits a signed integer to floating-point conversion.
+    pub fn emit_sitofp(&mut self, src: Operand, dst: Operand) {
+        self.irs.push(Stmt::as_sitofp(src, dst));
+    }
+
+    /// Emits a floating-point to signed integer conversion.
+    pub fn emit_fptosi(&mut self, src: Operand, dst: Operand) {
+        self.irs.push(Stmt::as_fptosi(src, dst));
     }
 }

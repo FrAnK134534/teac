@@ -98,6 +98,27 @@ impl Display for IntConst {
     }
 }
 
+/// A typed floating-point constant operand.
+#[derive(Clone)]
+pub struct FloatConst {
+    pub dtype: Dtype,
+    pub val: f64,
+}
+
+impl Display for FloatConst {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let bits = match &self.dtype {
+            Dtype::F32 => {
+                let as_f32 = self.val as f32;
+                let widened = as_f32 as f64;
+                widened.to_bits()
+            }
+            _ => self.val.to_bits(),
+        };
+        write!(f, "0x{bits:016X}")
+    }
+}
+
 /// Instruction operand.
 ///
 /// Exactly one of:
@@ -107,6 +128,7 @@ impl Display for IntConst {
 #[derive(Clone)]
 pub enum Operand {
     Const(IntConst),
+    FloatConst(FloatConst),
     Local(Local),
     Global(GlobalRef),
 }
@@ -116,6 +138,7 @@ impl Operand {
     pub fn dtype(&self) -> &Dtype {
         match self {
             Operand::Const(c) => &c.dtype,
+            Operand::FloatConst(c) => &c.dtype,
             Operand::Local(l) => &l.dtype,
             Operand::Global(g) => &g.dtype,
         }
@@ -143,6 +166,7 @@ impl Display for Operand {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Operand::Const(c) => Display::fmt(c, f),
+            Operand::FloatConst(c) => Display::fmt(c, f),
             Operand::Local(l) => Display::fmt(l, f),
             Operand::Global(g) => Display::fmt(g, f),
         }

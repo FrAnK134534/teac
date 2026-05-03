@@ -16,7 +16,8 @@ use std::fmt::{Display, Error, Formatter};
 impl Display for BuiltIn {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match self {
-            BuiltIn::Int => write!(f, "int"),
+            BuiltIn::Int => write!(f, "i32"),
+            BuiltIn::Float => write!(f, "f32"),
         }
     }
 }
@@ -105,6 +106,7 @@ impl Display for ArithExprInner {
         match self {
             ArithExprInner::ArithBiOpExpr(expr) => write!(f, "{}", expr),
             ArithExprInner::ExprUnit(unit) => write!(f, "{}", unit),
+            ArithExprInner::CastExpr(expr) => write!(f, "{} as {}", expr.expr, expr.target_type.inner),
         }
     }
 }
@@ -252,6 +254,7 @@ impl Display for ExprUnitInner {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match self {
             ExprUnitInner::Num(n) => write!(f, "{}", n),
+            ExprUnitInner::Float(n) => write!(f, "{}", n),
             ExprUnitInner::Id(id) => write!(f, "{}", id),
             ExprUnitInner::ArithExpr(a) => write!(f, "{}", a),
             ExprUnitInner::FnCall(fc) => write!(f, "{}", fc),

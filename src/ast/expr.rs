@@ -6,7 +6,7 @@
 //! general-purpose expression units that glue everything together.
 
 use super::ops::*;
-use super::types::Pos;
+use super::types::{Pos, TypeSpecifier};
 
 /// An lvalue — a memory location that can appear on the left side of an
 /// assignment.
@@ -74,6 +74,15 @@ pub struct ArithBiOpExpr {
     pub right: Box<ArithExpr>,
 }
 
+/// An explicit numeric cast expression, e.g. `x as f32`.
+#[derive(Debug, Clone)]
+pub struct CastExpr {
+    /// The expression being converted.
+    pub expr: Box<ExprUnit>,
+    /// The destination type written after `as`.
+    pub target_type: TypeSpecifier,
+}
+
 /// The inner representation of an arithmetic expression.
 #[derive(Debug, Clone)]
 pub enum ArithExprInner {
@@ -81,6 +90,8 @@ pub enum ArithExprInner {
     ArithBiOpExpr(Box<ArithBiOpExpr>),
     /// A leaf expression unit (number literal, identifier, function call, …).
     ExprUnit(Box<ExprUnit>),
+    /// An explicit `as` conversion.
+    CastExpr(Box<CastExpr>),
 }
 
 /// An arithmetic expression, pairing the inner value with a source position.
@@ -194,6 +205,8 @@ impl FnCall {
 pub enum ExprUnitInner {
     /// An integer literal.
     Num(i32),
+    /// A floating-point literal.
+    Float(f32),
     /// A simple variable identifier.
     Id(String),
     /// A parenthesised arithmetic sub-expression.

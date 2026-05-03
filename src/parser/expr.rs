@@ -1,6 +1,6 @@
 use crate::ast;
 
-use super::common::{get_pos, grammar_error, parse_num, Pair, ParseResult, Rule};
+use super::common::{get_pos, grammar_error, parse_float, parse_num, Pair, ParseResult, Rule};
 use super::ParseContext;
 
 impl<'a> ParseContext<'a> {
@@ -354,7 +354,7 @@ impl<'a> ParseContext<'a> {
 
     /// Parses an `arith_term` node into a boxed [`ast::ArithExpr`].
     ///
-    /// An arithmetic term is a sequence of `expr_unit` nodes optionally
+    /// An arithmetic term is a sequence of `cast_expr` nodes optionally
     /// combined with multiplicative operators (`*`, `/`).  The method builds a
     /// left-associative tree of [`ast::ArithBiOpExpr`] nodes.
     ///
@@ -368,23 +368,15 @@ impl<'a> ParseContext<'a> {
             return Err(grammar_error("arith_term", &pair_for_error));
         }
 
-        // Seed the accumulator with the first expression unit.
-        let first_unit = self.parse_expr_unit(inner_pairs[0].clone())?;
-        let mut expr = Box::new(ast::ArithExpr {
-            pos: first_unit.pos,
-            inner: ast::ArithExprInner::ExprUnit(first_unit),
-        });
+        // Seed the accumulator with the first cast/primary expression.
+        let mut expr = self.parse_cast_expr(inner_pairs[0].clone())?;
 
         // Walk through the remaining pairs looking for multiplicative operators.
         let mut i = 1;
         while i < inner_pairs.len() {
             if inner_pairs[i].as_rule() == Rule::arith_mul_op {
                 let op = self.parse_arith_mul_op(inner_pairs[i].clone())?;
-                let right_unit = self.parse_expr_unit(inner_pairs[i + 1].clone())?;
-                let right = Box::new(ast::ArithExpr {
-                    pos: right_unit.pos,
-                    inner: ast::ArithExprInner::ExprUnit(right_unit),
-                });
+                let right = self.parse_cast_expr(inner_pairs[i + 1].clone())?;
 
                 expr = Box::new(ast::ArithExpr {
                     pos: expr.pos,
@@ -401,6 +393,40 @@ impl<'a> ParseContext<'a> {
         }
 
         Ok(expr)
+    }
+
+    /// Parses a `cast_expr` into either a plain expression unit or an `as` cast.
+    fn parse_cast_expr(&self, pair: Pair) -> ParseResult<Box<ast::ArithExpr>> {
+        let pair_for_error = pair.clone();
+        let pos = get_pos(&pair);
+        let mut expr_unit = None;
+        let mut target_type = None;
+
+        for inner in pair.into_inner() {
+            match inner.as_rule() {
+                Rule::expr_unit => expr_unit = Some(self.parse_expr_unit(inner)?),
+                Rule::type_spec => {
+                    target_type = self.parse_type_spec(inner)?;
+                }
+                _ => {}
+            }
+        }
+
+        let expr_unit =
+            expr_unit.ok_or_else(|| grammar_error("cast_expr.expr_unit", &pair_for_error))?;
+        Ok(match target_type {
+            Some(target_type) => Box::new(ast::ArithExpr {
+                pos,
+                inner: ast::ArithExprInner::CastExpr(Box::new(ast::CastExpr {
+                    expr: expr_unit,
+                    target_type,
+                })),
+            }),
+            None => Box::new(ast::ArithExpr {
+                pos: expr_unit.pos,
+                inner: ast::ArithExprInner::ExprUnit(expr_unit),
+            }),
+        })
     }
 
     /// Parses an `arith_add_op` node into an [`ast::ArithBiOp`] additive variant.
@@ -469,6 +495,18 @@ impl<'a> ParseContext<'a> {
             .cloned()
             .collect();
 
+        // `-<float_num>` — negated floating-point literal.
+        if filtered.len() == 2
+            && filtered[0].as_rule() == Rule::op_sub
+            && filtered[1].as_rule() == Rule::float_num
+        {
+            let num = parse_float(filtered[1].clone())?;
+            return Ok(Box::new(ast::ExprUnit {
+                pos,
+                inner: ast::ExprUnitInner::Float(-num),
+            }));
+        }
+
         // `-<num>` — negated integer literal.
         if filtered.len() == 2
             && filtered[0].as_rule() == Rule::op_sub
@@ -494,6 +532,15 @@ impl<'a> ParseContext<'a> {
             return Ok(Box::new(ast::ExprUnit {
                 pos,
                 inner: ast::ExprUnitInner::FnCall(self.parse_fn_call(filtered[0].clone())?),
+            }));
+        }
+
+        // `<float_num>` — plain floating-point literal.
+        if filtered.len() == 1 && filtered[0].as_rule() == Rule::float_num {
+            let num = parse_float(filtered[0].clone())?;
+            return Ok(Box::new(ast::ExprUnit {
+                pos,
+                inner: ast::ExprUnitInner::Float(num),
             }));
         }
 

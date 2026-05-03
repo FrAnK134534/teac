@@ -6,7 +6,7 @@
 //! declarations, and the empty (null) statement.
 
 use super::decl::VarDeclStmt;
-use super::expr::{BoolUnit, FnCall, LeftVal, RightVal};
+use super::expr::{ArithExpr, BoolUnit, FnCall, LeftVal, RightVal};
 
 /// An assignment statement, e.g. `x = expr;`.
 #[derive(Debug, Clone)]
@@ -67,6 +67,19 @@ pub struct WhileStmt {
     pub stmts: CodeBlockStmtList,
 }
 
+/// A `for i in start..end` range loop.
+#[derive(Debug, Clone)]
+pub struct ForStmt {
+    /// Loop variable name, scoped to the loop body.
+    pub iter_id: String,
+    /// Inclusive start expression.
+    pub start: Box<ArithExpr>,
+    /// Exclusive end expression.
+    pub end: Box<ArithExpr>,
+    /// The statements that form the loop body.
+    pub stmts: CodeBlockStmtList,
+}
+
 /// The inner kind of a statement that can appear inside a code block.
 #[derive(Debug, Clone)]
 pub enum CodeBlockStmtInner {
@@ -80,6 +93,8 @@ pub enum CodeBlockStmtInner {
     If(Box<IfStmt>),
     /// A `while` loop statement.
     While(Box<WhileStmt>),
+    /// A `for` range loop statement.
+    For(Box<ForStmt>),
     /// A `return` statement.
     Return(Box<ReturnStmt>),
     /// A `continue` statement.

@@ -20,6 +20,16 @@ pub enum Error {
         source: std::num::ParseIntError,
     },
 
+    /// A floating-point literal that could not be parsed as a valid `f32`.
+    #[error("invalid floating-point literal `{literal}` at line {line}, column {column}")]
+    InvalidFloat {
+        literal: String,
+        line: usize,
+        column: usize,
+        #[source]
+        source: std::num::ParseFloatError,
+    },
+
     /// An I/O error encountered while reading source input.
     #[error("I/O error")]
     Io(#[from] std::io::Error),
@@ -121,6 +131,19 @@ pub(crate) fn parse_num(pair: Pair) -> ParseResult<i32> {
     let (line, column) = pair.as_span().start_pos().line_col();
 
     literal.parse().map_err(|source| Error::InvalidNumber {
+        literal,
+        line,
+        column,
+        source,
+    })
+}
+
+/// Parses a floating-point literal from a `float_num` parse-tree node.
+pub(crate) fn parse_float(pair: Pair) -> ParseResult<f32> {
+    let literal = pair.as_str().to_string();
+    let (line, column) = pair.as_span().start_pos().line_col();
+
+    literal.parse().map_err(|source| Error::InvalidFloat {
         literal,
         line,
         column,

@@ -13,6 +13,8 @@ pub type Pos = usize;
 pub enum BuiltIn {
     /// The 32-bit signed integer type (`int`).
     Int,
+    /// The 32-bit floating-point type (`f32`).
+    Float,
 }
 
 /// The inner representation of a type specifier, distinguishing between

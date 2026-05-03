@@ -53,6 +53,11 @@ impl<'a> ParseContext<'a> {
                         inner: ast::CodeBlockStmtInner::While(self.parse_while_stmt(inner)?),
                     }));
                 }
+                Rule::for_stmt => {
+                    return Ok(Box::new(ast::CodeBlockStmt {
+                        inner: ast::CodeBlockStmtInner::For(self.parse_for_stmt(inner)?),
+                    }));
+                }
                 Rule::return_stmt => {
                     return Ok(Box::new(ast::CodeBlockStmt {
                         inner: ast::CodeBlockStmtInner::Return(self.parse_return_stmt(inner)?),
@@ -247,6 +252,41 @@ impl<'a> ParseContext<'a> {
         Ok(Box::new(ast::WhileStmt {
             bool_unit: bool_unit
                 .ok_or_else(|| grammar_error("cond.bool_unit", &pair_for_error))?,
+            stmts,
+        }))
+    }
+
+    /// Parses a `for_stmt` node into a boxed [`ast::ForStmt`].
+    fn parse_for_stmt(&self, pair: Pair) -> ParseResult<Box<ast::ForStmt>> {
+        let pair_for_error = pair.clone();
+        let mut iter_id = None;
+        let mut bounds = Vec::new();
+        let mut stmts = Vec::new();
+
+        for inner in pair.into_inner() {
+            match inner.as_rule() {
+                Rule::identifier if iter_id.is_none() => {
+                    iter_id = Some(inner.as_str().to_string());
+                }
+                Rule::arith_expr => {
+                    bounds.push(self.parse_arith_expr(inner)?);
+                }
+                Rule::code_block_stmt => {
+                    stmts.push(*self.parse_code_block_stmt(inner)?);
+                }
+                _ => {}
+            }
+        }
+
+        let mut bounds = bounds.into_iter();
+        Ok(Box::new(ast::ForStmt {
+            iter_id: iter_id.ok_or_else(|| grammar_error("for_stmt.iter_id", &pair_for_error))?,
+            start: bounds
+                .next()
+                .ok_or_else(|| grammar_error("for_stmt.start", &pair_for_error))?,
+            end: bounds
+                .next()
+                .ok_or_else(|| grammar_error("for_stmt.end", &pair_for_error))?,
             stmts,
         }))
     }

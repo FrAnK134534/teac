@@ -161,7 +161,7 @@ impl<'a> ParseContext<'a> {
 
     /// Parses a `type_spec` node into an optional [`ast::TypeSpecifier`].
     ///
-    /// Recognises reference types (`&T`), the built-in `i32` keyword, and
+    /// Recognises reference types (`&T`), built-in numeric keywords, and
     /// user-defined composite (struct) types by their identifier.  Returns
     /// `Ok(None)` when the node is empty or contains no recognised type rule.
     ///
@@ -195,6 +195,13 @@ impl<'a> ParseContext<'a> {
                     return Ok(Some(ast::TypeSpecifier {
                         pos,
                         inner: ast::TypeSpecifierInner::BuiltIn(ast::BuiltIn::Int),
+                    }));
+                }
+                Rule::kw_f32 => {
+                    // Built-in floating-point type.
+                    return Ok(Some(ast::TypeSpecifier {
+                        pos,
+                        inner: ast::TypeSpecifierInner::BuiltIn(ast::BuiltIn::Float),
                     }));
                 }
                 Rule::identifier => {

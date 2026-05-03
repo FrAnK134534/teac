@@ -163,6 +163,7 @@ impl TypeInference<'_> {
             ast::CodeBlockStmtInner::Assignment(s) => self.process_assignment(s),
             ast::CodeBlockStmtInner::If(s) => self.process_if(s),
             ast::CodeBlockStmtInner::While(s) => self.process_while(s),
+            ast::CodeBlockStmtInner::For(s) => self.process_for(s),
             ast::CodeBlockStmtInner::Call(s) => self.check_call_args(&s.fn_call),
             ast::CodeBlockStmtInner::Return(s) => self.process_return(s),
             ast::CodeBlockStmtInner::Continue(_)
@@ -329,6 +330,25 @@ impl TypeInference<'_> {
         Ok(())
     }
 
+    /// For-loop merging. The loop variable is scoped only to the body.
+    fn process_for(&mut self, stmt: &ast::ForStmt) -> Result<(), Error> {
+        let start_type = self.type_of_arith_expr(&stmt.start)?;
+        let end_type = self.type_of_arith_expr(&stmt.end)?;
+        Self::check_compatible(&stmt.iter_id, &Dtype::I32, &start_type)?;
+        Self::check_compatible(&stmt.iter_id, &Dtype::I32, &end_type)?;
+
+        let mut body_ctx = self.fork(self.env.clone());
+        body_ctx
+            .env
+            .insert(stmt.iter_id.clone(), VarState::Resolved(Dtype::I32));
+        body_ctx.process_stmts(&stmt.stmts)?;
+        let mut body_env = body_ctx.env;
+        body_env.remove(&stmt.iter_id);
+
+        self.merge_env_single(&body_env)?;
+        Ok(())
+    }
+
     // -----------------------------------------------------------------------
     // Return
     // -----------------------------------------------------------------------
@@ -416,20 +436,38 @@ impl TypeInference<'_> {
 
     /// Compute the type of an arithmetic expression.
     fn type_of_arith_expr(&self, expr: &ast::ArithExpr) -> Result<Dtype, Error> {
-        match &expr.inner {
-            ast::ArithExprInner::ArithBiOpExpr(biop) => {
-                self.type_of_arith_expr(&biop.left)?;
-                self.type_of_arith_expr(&biop.right)?;
-                Ok(Dtype::I32)
-            }
-            ast::ArithExprInner::ExprUnit(unit) => self.type_of_expr_unit(unit),
+        let mut current = expr;
+        let mut right_operands = Vec::new();
+        while let ast::ArithExprInner::ArithBiOpExpr(biop) = &current.inner {
+            right_operands.push(biop.right.as_ref());
+            current = biop.left.as_ref();
         }
+
+        let mut dtype = match &current.inner {
+            ast::ArithExprInner::ArithBiOpExpr(_) => unreachable!(),
+            ast::ArithExprInner::ExprUnit(unit) => self.type_of_expr_unit(unit)?,
+            ast::ArithExprInner::CastExpr(expr) => {
+                self.type_of_expr_unit(&expr.expr)?;
+                Dtype::from(&expr.target_type)
+            }
+        };
+
+        for right in right_operands.into_iter().rev() {
+            let right = self.type_of_arith_expr(right)?;
+            dtype = if matches!(dtype, Dtype::F32) || matches!(right, Dtype::F32) {
+                Dtype::F32
+            } else {
+                Dtype::I32
+            };
+        }
+        Ok(dtype)
     }
 
     /// Compute the type of a leaf expression unit.
     fn type_of_expr_unit(&self, unit: &ast::ExprUnit) -> Result<Dtype, Error> {
         match &unit.inner {
             ast::ExprUnitInner::Num(_) => Ok(Dtype::I32),
+            ast::ExprUnitInner::Float(_) => Ok(Dtype::F32),
             ast::ExprUnitInner::Id(id) => self.resolve_variable(id),
             ast::ExprUnitInner::ArithExpr(expr) => self.type_of_arith_expr(expr),
             ast::ExprUnitInner::FnCall(call) => self.type_of_fn_call(call),
@@ -630,6 +668,12 @@ impl TypeInference<'_> {
 
     fn check_compatible(symbol: &str, expected: &Dtype, actual: &Dtype) -> Result<(), Error> {
         if expected == actual {
+            return Ok(());
+        }
+        if matches!(
+            (expected, actual),
+            (Dtype::I32, Dtype::F32) | (Dtype::F32, Dtype::I32)
+        ) {
             return Ok(());
         }
         Err(Error::TypeMismatch {

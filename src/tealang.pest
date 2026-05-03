@@ -49,6 +49,8 @@ op_not = { "!" }
 op_lt = { "<" }
 // Example: "if a[i] > max { max = a[i]; }"
 op_gt = { ">" }
+// Example: "for i in 0..10 { }"
+op_range = { ".." }
 
 // Delimiters
 // Example: "fn move(x:i32, y:i32) { }"
@@ -83,6 +85,13 @@ num = @{
     | (ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*)
 }
 
+// Floating-point literal accepted by lab3's f32 feature.
+// Examples: "3.14", "2.0", ".5"
+float_num = @{
+    ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+
+    | "." ~ ASCII_DIGIT+
+}
+
 // Keywords (using @ for atomic rules to prevent whitespace inside)
 // Example: "let x:i32 = 0;"
 kw_let = @{ "let" ~ WHITESPACE }
@@ -103,7 +112,15 @@ kw_continue = @{ "continue" ~ &(WHITESPACE | semicolon) }
 // Example: "return 0;" or "return sum;"
 kw_return = @{ "return" ~ &(WHITESPACE | semicolon) }
 // Example: "let count:i32 = 0;"
-kw_i32 = @{ "i32" ~ &(WHITESPACE | semicolon | comma | rparen | lbrace | rbrace | rbracket | op_assign) }
+kw_i32 = @{ "i32" ~ &(WHITESPACE | semicolon | comma | rparen | lbrace | rbrace | rbracket | op_assign | op_add | op_sub | op_mul | op_div) }
+// Example: "let x:f32 = 3.14;"
+kw_f32 = @{ "f32" ~ &(WHITESPACE | semicolon | comma | rparen | lbrace | rbrace | rbracket | op_assign | op_add | op_sub | op_mul | op_div) }
+// Example: "x as f32"
+kw_as = @{ "as" ~ &(WHITESPACE | semicolon | comma | rparen | rbrace | rbracket | op_add | op_sub | op_mul | op_div) }
+// Example: "for i in 0..10 { }"
+kw_for = @{ "for" ~ WHITESPACE }
+// Example: "for i in 0..10 { }"
+kw_in = @{ "in" ~ WHITESPACE }
 // Example: "use std;"
 kw_use = @{ "use" ~ WHITESPACE }
 
@@ -125,6 +142,7 @@ ref_type = {
 // Examples: "i32", "Node", "Queue", "&[i32]"
 type_spec = {
     ref_type
+    | kw_f32
     | kw_i32
     | identifier
 }
@@ -237,6 +255,7 @@ code_block_stmt = {
     | assignment_stmt
     | call_stmt
     | if_stmt
+    | for_stmt
     | while_stmt
     | return_stmt
     | continue_stmt
@@ -274,6 +293,12 @@ if_stmt = {
 // Examples: "while i < n { i = i + 1; }", "while (ch >= 48) && (ch <= 57) { }"
 while_stmt = {
     kw_while ~ bool_expr ~ lbrace ~ code_block_stmt* ~ rbrace
+}
+
+// For-in range loop. The end bound is exclusive.
+// Examples: "for i in 0..10 { }", "for i in 0..(n + 1) { }"
+for_stmt = {
+    kw_for ~ identifier ~ kw_in ~ arith_expr ~ op_range ~ arith_expr ~ lbrace ~ code_block_stmt* ~ rbrace
 }
 
 // Break statement: exit from a loop
@@ -359,7 +384,7 @@ arith_expr = {
 // Arithmetic term: multiplication and division (higher precedence)
 // Examples: "x * 10", "num / base", "a * b / c"
 arith_term = {
-    expr_unit ~ (arith_mul_op ~ expr_unit)*
+    cast_expr ~ (arith_mul_op ~ cast_expr)*
 }
 
 // Addition and subtraction operators
@@ -376,9 +401,17 @@ expr_unit = {
     lparen ~ arith_expr ~ rparen
     | fn_call
     | ampersand ~ identifier           // address-of: &arr produces &[T] reference from array
+    | op_sub ~ float_num  // negative floating-point number
     | op_sub ~ num  // negative number
+    | float_num
     | num
     | identifier ~ expr_suffix*
+}
+
+// Cast expression for lab3's `as` conversion feature.
+// Examples: "x as f32", "half as i32"
+cast_expr = {
+    expr_unit ~ (kw_as ~ type_spec)?
 }
 
 // Expression suffix: array indexing or member access (can be chained)

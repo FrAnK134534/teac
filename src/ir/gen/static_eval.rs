@@ -28,6 +28,7 @@ impl IrGenerator<'_> {
         match &expr.inner {
             ast::ArithExprInner::ArithBiOpExpr(expr) => Self::handle_arith_biop_expr_static(expr),
             ast::ArithExprInner::ExprUnit(unit) => Self::handle_expr_unit_static(unit),
+            ast::ArithExprInner::CastExpr(expr) => Self::handle_expr_unit_static(&expr.expr),
         }
     }
 
@@ -68,6 +69,7 @@ impl IrGenerator<'_> {
     pub fn handle_expr_unit_static(expr: &ast::ExprUnit) -> Result<i32, Error> {
         match &expr.inner {
             ast::ExprUnitInner::Num(num) => Ok(*num),
+            ast::ExprUnitInner::Float(num) => Ok(*num as i32),
             ast::ExprUnitInner::ArithExpr(expr) => Self::handle_arith_expr_static(expr),
             _ => Err(Error::InvalidExprUnit {
                 expr_unit: expr.clone(),
